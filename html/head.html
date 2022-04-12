@@ -1,0 +1,312 @@
+{{ define "head" }}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Garden — {{ .Title }}</title>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Vollkorn&display=swap" rel="stylesheet">
+
+        <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16x16.png">
+        <link rel="manifest" href="/assets/favicons/site.webmanifest">
+        <link rel="mask-icon" href="/assets/favicons/safari-pinned-tab.svg" color="#86c488">
+        <link rel="shortcut icon" href="/assets/favicons/favicon.ico">
+        <meta name="msapplication-TileColor" content="#ffffff">
+        <meta name="msapplication-config" content="/assets/favicons/browserconfig.xml">
+        <meta name="theme-color" content="#ffffff">
+
+         <style>
+            /* reset */
+            *,*::after,*::before{box-sizing:border-box}blockquote,body,dd,dl,figure,h1,h2,h3,h4,p{margin:0}ul[role='list'],ol[role='list']{list-style:none}html:focus-within{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}button,input,select,textarea{font:inherit}@media (prefers-reduced-motion: reduce){html:focus-within{scroll-behavior:auto}*,*::after,*::before{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
+            /* end reset */
+            /* below is the minimum viable css for simply getting the forum out the door; contributions, both in css and
+               design mockups, welcome from the community for v2,v3,...,vn :) */
+            br { margin-bottom: unset; }
+            html {
+                max-width: 40rem;
+                font-family: "Vollkorn", sans-serif;
+            }
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
+            label {
+                display: block;
+            }
+            /* normalize post titles */
+
+            /* article h1, article h2, article h3 {
+                font-size: 1rem;
+            } */
+            #logo {
+                width: 48px;
+                height: 48px;
+                display: block;
+            }
+			ul[type="menu"] {
+				display: flex;
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+                grid-column-gap: 0.5rem;
+			}
+            li { margin-bottom: 0rem; }
+            ul { padding-left: 1rem; }
+            h1, h2 { margin-bottom: 1rem; }
+            p { margin-bottom: 1rem; }
+            blockquote { padding-left: 1rem; border-left: 3px solid black }
+            div { margin-bottom: 2rem; }
+            textarea { min-height: 10rem; }
+            article > section { margin-bottom: 0.5rem; }
+            article { margin-bottom: 2rem; }
+            form div, label { margin-bottom: 0; }
+            h1 a:visited,
+            a:not([class]) {
+                color: #FBFFD2;
+            }
+            a:visited {
+                /* color: #666; for lack of better imagination */
+                color: #FBFFD2;
+            }
+            .selectable {
+                -webkit-touch-callout: all;
+                -webkit-user-select: all;
+                -khtml-user-select: all;
+                -moz-user-select: all;
+                -ms-user-select: all;
+                user-select: all;
+            }
+            pre { overflow: auto; }
+            table { border:2px solid; }
+            th, td { text-align:left; padding: 2px 7px; border: 1px solid; }
+            th { font-weight: bold; }
+            tr:hover td { background:#e2cca2; }
+
+            .post-container {
+                max-width: 30rem;
+                margin-top: 1rem;
+            }
+            .post-container > * {
+                display: block;
+                width: 100%;
+            }
+
+            body { padding: 2rem; background: #0B160B; color: #FBFFD2 }
+            * { margin-bottom: 1rem; }
+
+            .visually-hidden {
+                clip: rect(0 0 0 0);
+                clip-path: inset(50%);
+                height: 1px;
+                overflow: hidden;
+                position: absolute;
+                white-space: nowrap;
+                width: 1px;
+            }
+
+            header nav {
+                float: right;
+            }
+
+            header ul > li {
+                display: inline-block;
+                margin-left: 0.5rem;
+            }
+
+            @supports (display: flex) {
+                header nav {
+                   float: unset;
+               }
+
+               header ul > li {
+                   display: unset;
+                   margin-left: unset;
+               }
+            }
+
+            header > a {
+                background-image: url('/assets/merveilles.png');
+                background-size: 100%;
+                background-repeat: no-repeat;
+                display: inline-block;
+                height: 48px;
+                width: 48px;
+            }
+
+            header svg {
+                display: none;
+            }
+
+            header details {
+                cursor: pointer;
+            }
+            header details, header details summary {
+                margin-bottom: unset;
+            }
+            header details a:visited {
+                color: black;
+            }
+            header details ul {
+                position: absolute;
+            }
+            header details ul > li {
+                display: block;
+            }
+
+            @supports (display: flex) {
+                header > a {
+                    background-image: none;
+                    background-size: unset;
+                    background-repeat: unset;
+                }
+
+                header svg {
+                    display: initial;
+                }
+            }
+
+
+            input, textarea {
+                background: #000000;
+                color: #FBFFD2;
+                border: none;
+            }
+            button {
+                color: #000000;
+                background: #FBFFD2;
+                border: none;
+                cursor: pointer;
+            }
+            .delete_post {
+                color: #FBFFD2;
+                background: transparent;
+            }
+            h2 {
+                font-weight: normal;
+                font-size: 16pt
+            }
+            h2 a{
+                text-decoration: none;
+            }
+            h2 a:hover {
+                text-decoration: underline;
+            }
+
+            main article:first-of-type section {
+                display: none; /* hide name/time on first post */
+            }
+
+            .chladni {
+                display: inline;
+                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(25%);
+                margin: 2px 10px 0 0;
+                height: 23px;
+                vertical-align: text-top;
+                
+                cursor: pointer;
+            }
+            .chladni:hover {
+                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(60%);
+            }
+
+            .replanting {
+                color: #86C488;
+                font-family: monospace;
+                font-size: 10px;
+            }
+            h2 a {
+                opacity: 0.2;
+            }
+            h2 input[type="checkbox"] {
+                display: none;
+            }
+            h2 label {
+                display: inline;
+            }
+
+            h2 input[type="checkbox"]:checked ~ label img {
+                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(100%);
+            }
+            h2 input[type="checkbox"]:checked ~ a {
+                opacity: 1 !important;
+            }
+        </style>
+
+        <!-- <link href="/assets/style.css" rel="stylesheet"> -->
+
+        <!-- <meta name="description" content=""> -->
+
+        <!-- <meta property="og:title" content=""> -->
+        <!-- <meta property="og:description" content=""> -->
+        <!-- <meta property="og:image" content="/assets/favicon.png"> -->
+        <!-- <meta property="og:image:alt" content=""> -->
+        <!-- <meta property="og:locale" content="en_US"> -->
+        <!-- <meta property="og:type" content="website"> -->
+        <!-- <meta name="twitter:card" content=""> -->
+        <!-- <meta property="og:url" content=""> -->
+        <!--  -->
+        <!-- <link rel="canonical" href=""> -->
+
+        <!-- <link rel="search" type="application/opensearchdescription+xml" title="" href="/assets/opensearch.xml"> -->
+    </head>
+    <body>
+        <header>
+            <a style="margin-bottom: 0; height: 48px;"  href="/" aria-label="Home">
+                <svg aria-hidden="true" style="margin-bottom: 0;" width="48" height="48" fill="#86C488" stroke="none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                  <!-- <g>
+                    <path d="M185,65 A60,60 0 0,0 125,125 L185,125 Z M125,245 A60,60 0 0,0 185,185 L125,185 Z M95,125 A30,30 0 0,1 125,155 A30,30 0 0,1 95,185 A30,30 0 0,1 65,155 A30,30 0 0,1 95,125 Z M155,125 A30,30 0 0,1 185,155 A30,30 0 0,1 155,185 A30,30 0 0,1 125,155 A30,30 0 0,1 155,125 Z M215,125 A30,30 0 0,1 245,155 A30,30 0 0,1 215,185 A30,30 0 0,1 185,155 A30,30 0 0,1 215,125 "/>
+                    <path d="M125,65 A60,60 0 0,1 185,125 L125,125 Z M185,245 A60,60 0 0,1 125,185 L185,185 Z M65,65 A60,60 0 0,1 125,125 L65,125 Z M65,245 A60,60 0 0,0 125,185 L65,185 Z M245,65 A60,60 0 0,0 185,125 L245,125 Z M245,245 A60,60 0 0,1 185,185 L245,185 Z"/>
+                  </g> -->
+
+                  <g>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M88.6401 16.6732C79.6318 19.1832 62.7008 29.3116 49.4342 42.1436C29.6939 61.2371 17.8436 81.8992 15.1164 106.599C14.6637 110.702 14.591 123.542 14.8791 148.463L15.2957 184.41H53.6235C89.6395 184.41 91.9655 184.347 92.1916 183.374C92.6567 181.371 91.9578 156.27 91.3608 153.535L90.7561 150.765L86.8111 150.38C72.0312 148.934 61.6815 146.568 54.2969 142.949C45.5259 138.65 38.8401 130.915 36.9951 122.933C36.0004 118.629 36.5738 108.493 38.1531 102.457C41.2152 90.756 50.2152 75.3087 61.5336 66.1105C66.8779 61.7673 72.8531 55.9519 81.091 51.1418C86.8649 47.7704 91.6874 44.0258 94.514 42.1436L99.6525 38.7217L104.908 42.1436C107.613 43.7602 113.088 48.3128 117.481 50.6797C121.875 53.0465 127.434 56.9264 129.834 58.5785C143.957 68.3022 154.124 85.0974 158.351 101.421C159.832 107.138 160.457 118.36 159.562 123.167C156.821 137.895 143.642 146.39 118.755 149.468C113.863 150.074 109.613 150.721 109.313 150.906C109.013 151.092 108.399 152.515 107.947 154.069C106.981 157.396 106.809 184.113 107.749 184.855C108.057 185.098 125.271 185.164 146.003 185.002C175.826 184.767 183.856 184.545 184.464 183.937C185.569 182.831 185.568 115.95 184.464 106.599C181.234 79.2525 168.029 54.1945 148.547 38.4394C138.634 30.4235 122.131 21.4927 109.789 17.4661C99.9288 14.2489 97.6484 14.1631 88.6401 16.6732Z"/>
+                    <path d="M69.9141 96.1371C70.5301 95.5903 71.8325 94.7264 72.8082 94.2176C74.9201 93.117 77.4899 93.0649 79.8579 94.0755C81.2023 94.6495 82.4437 96.4241 85.4863 102.126C89.8082 110.222 92.1609 112.703 96.0076 113.219C97.7218 113.449 99.0378 113.178 100.959 112.199C104.282 110.507 110.412 103.473 113.399 99.0968C116.617 94.3832 119.425 94.1016 122.77 97.6773C124.849 99.8998 125.183 105.173 123.459 108.552C121.409 112.571 118.809 115.039 113.718 117.801C105.932 122.025 102.131 123.071 96.2715 122.603C87.255 121.883 77.323 118.243 72.1195 113.752C69.3141 111.33 66.5875 106.345 66.607 103.673C66.6224 101.491 68.3715 97.5063 69.9141 96.1371Z"/>                    
+                  </g>
+                </svg>
+            </a>
+            <nav>
+                <ul type="menu">
+
+                <!-- {{ if eq .Title "seeds" }}
+                <li> 
+                    <details>
+                        <summary>sort</summary>
+                        <ul>
+                            <li> <a href="/?sort=posts">recent posts</a></li>
+                            <li> <a href="/">most recent thread</a></li>
+                        </ul>
+                    </details>
+                </li>
+                {{ end }} -->
+                    {{ if .LoggedIn }}
+                    <li><a href="/seed/new">plant new seed</a></li>
+                    {{ end }}
+                    <!-- {{ if .QuickNav }}
+                    <li><a href="#bottom">bottom</a></li>
+                    {{end}} -->
+                    <li><a href="/about">about</a></li>
+                    {{ if .LoggedIn }}
+                    <li><a href="/logout">logout</a></li>
+                    {{ else }}
+                    <li><a href="/login">login</a></li>
+                    {{ end }}
+                </ul>
+            </nav>
+            
+            
+        </header>
+
+        {{ if eq .Title "seeds" }}
+            <div class="replanting">uncultivated seeds will be replanted in 2 hours</div>
+            <!-- <div class="replanting">2 hours til replanting</div> -->
+        {{ end }}
+
+{{ end }}

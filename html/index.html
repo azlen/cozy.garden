@@ -1,0 +1,23 @@
+{{ template "head" . }}
+<!-- crop rotation? -->
+<!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
+
+<main>
+	{{ range $index, $thread := .Data.Threads }}
+	<h2>
+		<input id="seed{{ $thread.ID }}" type="checkbox" />
+		<label for="seed{{ $thread.ID }}">
+			<img class="chladni" src="{{ $thread.PostCount | chladniUrl }}" />
+		</label>
+		<a href="{{ $thread.Slug }}">{{ $thread.Title }}</a>
+	</h2>
+	{{ end }}
+</main>
+
+{{ if .LoggedIn }}
+<aside>
+	<p> <a href="/seed/new">Plant a new seed</a></p>
+</aside>
+{{ end }}
+
+{{ template "footer" . }}

@@ -1,0 +1,6 @@
+.*.sw[a-z]
+*.db
+data/
+data/.gitkeep
+pwtool
+*.json

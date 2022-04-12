@@ -1,0 +1,36 @@
+{{ template "head" . }}
+<main>
+    <h1>Register</h1>
+
+    <form method="post">
+        <label for="username">Username:</label>
+        <input type="text" required id="username" name="username">
+        <label for="password">Password:</label>
+        <input type="password" minlength="9" required id="password" name="password" aria-describedby="password-help" style="margin-bottom:0;">
+        <div style="margin-bottom:1rem;"><small id="password-help">Must be at least 9 characters long.</small></div>
+        <label for="verificationlink">Verification link:</label>
+        <!-- <input type="text" required id="verification link" name="verificationlink"> -->
+        <!-- <input type="hidden" name="verificationcode" value="{{.Data.VerificationCode}}"> -->
+        <div>
+            <div>
+                <input type="checkbox" required id="coc">
+                <label for="coc" style="display: inline-block;">I have refreshed my memory of the <a target="_blank" href="https://github.com/merveilles/Resources/blob/master/CONDUCT.md">Merveilles Code of Conduct</a></label>
+            </div>
+            <div>
+                <input type="checkbox" required id="coc2" >
+                <label style="display: inline;" for="coc2">Yes, I have actually <a target="_blank" href="https://github.com/merveilles/Resources/blob/master/CONDUCT.md">read it</a></label>
+            </div>
+        </div>
+        <input type="submit" value="Register">
+    </form>
+
+
+
+    {{ if .Data.ErrorMessage }}
+    <div>
+        <p><b> {{ .Data.ErrorMessage }} </b></p>
+    </div>
+    {{ end }}
+
+</main>
+{{ template "footer" . }}
