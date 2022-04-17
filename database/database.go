@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"math/rand"
 
 	"cerca/util"
 
@@ -51,7 +52,8 @@ func createTables(db *sql.DB) {
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    passwordhash TEXT NOT NULL
+    passwordhash TEXT NOT NULL,
+	gardenids TEXT NOT NULL
   );
   `,
 		`
@@ -110,7 +112,13 @@ func createTables(db *sql.DB) {
     FOREIGN KEY(authorid) REFERENCES users(id),
     FOREIGN KEY(threadid) REFERENCES threads(id)
   );
-  `}
+  `,
+  `CREATE TABLE IF NOT EXISTS likes (
+	  id INTEGER PRIMARY KEY AUTOINCREMENT,
+	  date DATE,
+	  userid INTEGER,
+	  threadid INTEGER
+  )`}
 
 	for _, query := range queries {
 		if _, err := db.Exec(query); err != nil {
@@ -275,6 +283,106 @@ func (d DB) ListThreads(sortByPost bool) []Thread {
 		threads = append(threads, data)
 	}
 	return threads
+}
+
+// get a list of threads
+func (d DB) ListThreadsUser(userid int) []Thread {
+	query := fmt.Sprintf(`
+  SELECT count(t.id), t.title, t.id, u.name FROM threads t
+  INNER JOIN users u on u.id = t.authorid
+  INNER JOIN posts p ON t.id = p.threadid
+  WHERE t.id IN (
+	  WITH split(id, str) AS (
+		  SELECT '', gardenids||',' FROM users WHERE id = %d
+		  UNION ALL SELECT
+		  substr(str, 0, instr(str, ',')),
+		  substr(str, instr(str, ',')+1)
+		  FROM split WHERE str!=''
+	  ) SELECT cast(id AS INTEGER) FROM split WHERE id!=''
+  )
+  GROUP BY t.id
+`, userid)
+
+  //INNER JOIN users u on u.id = t.authorid
+//   INNER JOIN posts p ON t.id = p.threadid
+//   GROUP BY t.id
+//   ORDER BY t.publishtime DESC
+
+// WHERE t.id IN (
+// 	WITH split(id, str) AS (
+// 		SELECT gardenids,',' FROM users WHERE id=%d
+// 		UNION ALL SELECT
+// 		substr(str, 0, instr(str, ',')),
+// 		substr(str, instr(str, ',')+1)
+// 		FROM split WHERE str!=''
+// 	) SELECT cast(id AS INTEGER) FROM split WHERE id!=''
+// )
+
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "list threads: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	util.Check(err, "list threads: query")
+	defer rows.Close()
+
+	var postCount int
+	var data Thread
+	var threads []Thread
+	for rows.Next() {
+		if err := rows.Scan(&postCount, &data.Title, &data.ID, &data.Author); err != nil {
+			log.Fatalln(util.Eout(err, "list threads: read in data via scan"))
+		}
+		data.Slug = util.GetThreadSlug(data.ID, data.Title, postCount)
+		data.PostCount = postCount
+		threads = append(threads, data)
+	}
+	return threads
+}
+
+// func (d DB) GetCultivatedThreads(userid int) []Thread {
+	
+// }
+
+func (d DB) RefreshThreads(userid int) {
+
+	threads := d.ListThreads(true)
+	// log.Println(threads)
+
+	newids := []int{}
+
+	for i := 0; i < 6; i++ {
+		index := rand.Intn(len(threads))
+		
+		// add ID of new thread to the garden
+		newids = append(newids, threads[index].ID)
+
+		// remove element from array to prevent duplicates
+		threads = append(threads[:index], threads[index+1:]...)
+	}
+
+	log.Println(util.ArrayToString(newids, ","))
+
+	stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%s" WHERE id = %d`, util.ArrayToString(newids, ","), userid)
+	_, err := d.Exec(stmt)
+	util.Check(err, "refresh threads for user %d", userid)
+}
+
+func (d DB) SetLike(userid int, threadid int, value bool) {
+	stmt := `SELECT 1 FROM likes WHERE userid = ? AND threadid = ?`
+	exists, _ := d.existsQuery(stmt, userid, threadid)
+
+	if exists && !value {
+		stmt := `DELETE FROM likes WHERE userid = ? AND threadid = ?`
+		_, err := d.Exec(stmt, userid, threadid)
+
+		util.Check(err, "remove like for user %d from thread %d", userid, threadid)
+	} else if !exists && value {
+		stmt := `INSERT INTO likes (date, userid, threadid) VALUES (?, ?, ?)`
+		_, err := d.Exec(stmt, time.Now(), userid, threadid)
+
+		util.Check(err, "add like for user %d from thread %d", userid, threadid)
+	}
 }
 
 func (d DB) AddPost(content string, threadid, authorid int) (postID int) {

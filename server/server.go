@@ -240,18 +240,23 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		h.ErrorRoute(res, req, http.StatusNotFound)
 		return
 	}
-	loggedIn, _ := h.IsLoggedIn(req)
-	var mostRecentPost bool
+	loggedIn, userid := h.IsLoggedIn(req)
+	// var mostRecentPost bool
 
-	params := req.URL.Query()
-	if q, exists := params["sort"]; exists {
-		sortby := q[0]
-		mostRecentPost = sortby == "posts"
-	}
+	// params := req.URL.Query()
+	// if q, exists := params["sort"]; exists {
+		// sortby := q[0]
+		// mostRecentPost = sortby == "posts"
+	// }
 
 	if loggedIn {
 		// show index listing
-		threads := h.db.ListThreads(mostRecentPost)
+		// threads := h.db.ListThreads(mostRecentPost)
+
+		threads := h.db.ListThreadsUser(userid)
+
+		// fmt.Println(threads)
+		
 		view := TemplateData{Data: IndexData{threads}, LoggedIn: loggedIn, Title: "seeds"}
 		h.renderView(res, "index", view)
 	} else {
@@ -262,6 +267,101 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 
 func IndexRedirect(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, "/", http.StatusSeeOther)
+}
+
+func (h RequestHandler) RefreshRoute(res http.ResponseWriter, req *http.Request) {
+	loggedIn, userid := h.IsLoggedIn(req)
+	if loggedIn {
+		h.db.RefreshThreads(userid)
+	}
+	IndexRedirect(res, req)
+}
+
+func (h RequestHandler) LikePostRoute(res http.ResponseWriter, req *http.Request) {
+	// if req.Method == "GET" {
+	// 	IndexRedirect(res, req)
+	// 	return
+	// }
+	// threadURL := req.PostFormValue("thread")
+	threadid, ok := util.GetURLPortion(req, 4)
+	loggedIn, userid := h.IsLoggedIn(req)
+
+	mode, _ := util.GetURLPortion(req, 3)
+	value := false
+
+	if mode == 1 {
+		value = true
+	} else if mode > 1 {
+		// unexpected value
+		IndexRedirect(res, req)
+		return
+	}
+
+	// fmt.Println(threadid, ok, loggedIn, userid, mode, value)
+	// fmt.Println(req)
+	
+	// if !loggedIn {
+	// 	renderErr("You need to be logged in to cultivate a seed")
+	// 	return
+	// }
+
+	// if !ok {
+	// 	renderErr("Invalid thread id")
+	// 	return
+	// }
+	
+	if loggedIn && ok {
+		fmt.Println("LIKE THREAD", threadid, "FROM USER", userid)
+		h.db.SetLike(userid, threadid, value)
+	}
+
+	IndexRedirect(res, req)
+	
+
+	// fmt.Println(req.Referer())
+
+	// generic error message base, with specifics being swapped out depending on the error
+	// genericErr := GenericMessageData{
+	// 	Title:       "Unaccepted request",
+	// 	LinkMessage: "Go back to",
+	// 	Link:        threadURL,
+	// 	LinkText:    "the thread",
+	// }
+
+	// renderErr := func(msg string) {
+	// 	fmt.Println(msg)
+	// 	genericErr.Message = msg
+	// 	h.renderView(res, "generic-message", TemplateData{Data: genericErr, LoggedIn: loggedIn})
+	// }
+
+	// if !loggedIn || !ok {
+	// 	renderErr("Invalid post id, or you were not allowed to delete it")
+	// 	return
+	// }
+
+	// post, err := h.db.GetPost(postid)
+	// if err != nil {
+	// 	dump(err)
+	// 	renderErr("The post you tried to delete was not found")
+	// 	return
+	// }
+
+	// authorized := post.AuthorID == userid
+	// switch req.Method {
+	// case "POST":
+	// 	if authorized {
+	// 		err = h.db.DeletePost(postid)
+	// 		if err != nil {
+	// 			dump(err)
+	// 			renderErr("Error happened while deleting the post")
+	// 			return
+	// 		}
+	// 	} else {
+	// 		renderErr("That's not your post to delete? Sorry buddy!")
+	// 		return
+	// 	}
+	// }
+	// http.Redirect(res, req, threadURL, http.StatusSeeOther)
 }
 
 func (h RequestHandler) LogoutRoute(res http.ResponseWriter, req *http.Request) {
@@ -705,6 +805,9 @@ func Serve(allowlist []string, sessionKey string, isdev bool) {
 	http.HandleFunc("/seed/", handler.ThreadRoute)
 	http.HandleFunc("/robots.txt", handler.RobotsRoute)
 	http.HandleFunc("/", handler.IndexRoute)
+
+	http.HandleFunc("/refresh", handler.RefreshRoute)
+	http.HandleFunc("/seed/cultivate/", handler.LikePostRoute)
 
 	fileserver := http.FileServer(http.Dir("html/assets/"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", fileserver))

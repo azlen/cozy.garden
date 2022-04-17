@@ -1,23 +1,39 @@
 {{ template "head" . }}
 <!-- crop rotation? -->
 <!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
+<div class="replanting"><span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in 2 hours. <a href="/refresh">refresh now</a></a></div>
 
 <main>
 	{{ range $index, $thread := .Data.Threads }}
 	<h2>
-		<input id="seed{{ $thread.ID }}" type="checkbox" />
-		<label for="seed{{ $thread.ID }}">
-			<img class="chladni" src="{{ $thread.PostCount | chladniUrl }}" />
-		</label>
+		<input id="seed{{ $thread.ID }}" type="checkbox" {{ if eq $index 1 }} checked {{ end }} />
+		<!-- still need to get the likes and pass them into the template -->
+		<a href="/seed/cultivate/1/{{ $thread.ID }}" onclick="toggleLike.bind(this)(event)">
+			<img class="chladni" src="{{ $thread.PostCount | chladniUrl }}" title="cultivate" />
+		</a>
+		
 		<a href="{{ $thread.Slug }}">{{ $thread.Title }}</a>
 	</h2>
 	{{ end }}
 </main>
 
-{{ if .LoggedIn }}
+<script>
+	function toggleLike(event) {
+		// prevent from following link when javascript is enabled
+		event.preventDefault()
+		this.previousElementSibling.toggleAttribute('checked')
+
+		// send like to server
+		// fetch()
+
+		return false
+	}
+</script>
+
+<!-- {{ if .LoggedIn }}
 <aside>
 	<p> <a href="/seed/new">Plant a new seed</a></p>
 </aside>
-{{ end }}
+{{ end }} -->
 
 {{ template "footer" . }}

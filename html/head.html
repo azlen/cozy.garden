@@ -174,16 +174,47 @@
             }
 
 
-            input, textarea {
-                background: #000000;
+            input[type="text"], input[type="password"], textarea {
+                background: #313D4E;
                 color: #FBFFD2;
-                border: none;
+                border: 1px solid #546855;
+                border-radius: 3px;
+                padding: 1px 6px;
+                outline: none;
             }
-            button {
+            input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+                border-color: #86C488;
+            }
+            /* input:-internal-autofill-selected {
+                background: #FF0000 !important;
+            } */
+
+            input:-webkit-autofill {
+                -webkit-box-shadow:0 0 0 50px #313D4E inset; /* Change the color to your own background color */
+                -webkit-text-fill-color: #FBFFD2;
+            }
+
+            input:-webkit-autofill:focus {
+                -webkit-box-shadow: 0 0 0 50px #313D4E inset;/*your box-shadow*/
+                -webkit-text-fill-color: #FBFFD2;
+            } 
+
+            button, input[type="submit"] {
                 color: #000000;
                 background: #FBFFD2;
                 border: none;
                 cursor: pointer;
+
+                background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 6.1%, rgba(0, 0, 0, 0) 100%), #86C488;
+                border: 1px solid #86C488;
+                box-sizing: border-box;
+                border-radius: 3px;
+                
+                color: #0B160B;
+
+                padding: 1px 10px 0px 10px;
+
+                /* font-family: monospace; */
             }
             .delete_post {
                 color: #FBFFD2;
@@ -200,9 +231,9 @@
                 text-decoration: underline;
             }
 
-            main article:first-of-type section {
-                display: none; /* hide name/time on first post */
-            }
+            /* main article:first-of-type section {
+                display: none;
+            } */
 
             .chladni {
                 display: inline;
@@ -238,6 +269,30 @@
             h2 input[type="checkbox"]:checked ~ a {
                 opacity: 1 !important;
             }
+
+            nav {
+                position: fixed;
+                bottom: 1rem;
+                left: 2rem;
+                background: #0B160B;
+            }
+            nav a {
+                color: #86C488;
+                margin-right: 20px;
+                text-decoration: none;
+            }
+            nav a:visited { color: #86C488 }
+            nav a:hover {
+                color: #FFFFFF;
+                text-decoration: underline;
+            }
+            small {
+                opacity: 0.3;
+            }
+            input:focus + div>small {
+                opacity: 1;
+            }
+            
         </style>
 
         <!-- <link href="/assets/style.css" rel="stylesheet"> -->
@@ -272,6 +327,7 @@
                   </g>
                 </svg>
             </a>
+            {{ if eq .Title "seeds" }}
             <nav>
                 <ul type="menu">
 
@@ -287,7 +343,7 @@
                 </li>
                 {{ end }} -->
                     {{ if .LoggedIn }}
-                    <li><a href="/seed/new">plant new seed</a></li>
+                    <li><a href="/seed/new">+ plant new seed +</a></li>
                     {{ end }}
                     <!-- {{ if .QuickNav }}
                     <li><a href="#bottom">bottom</a></li>
@@ -300,13 +356,14 @@
                     {{ end }}
                 </ul>
             </nav>
+            {{ end }}
             
             
         </header>
 
-        {{ if eq .Title "seeds" }}
-            <div class="replanting">uncultivated seeds will be replanted in 2 hours</div>
+        <!-- {{ if eq .Title "seeds" }} -->
+            
             <!-- <div class="replanting">2 hours til replanting</div> -->
-        {{ end }}
+        <!-- {{ end }} -->
 
 {{ end }}

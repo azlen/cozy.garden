@@ -2,16 +2,36 @@
 <main>
     <h1>Register</h1>
 
-    <form method="post">
+    <p>Already have an account? <a href="/login">Login</a>. </p>
+
+    {{ if .Data.ErrorMessage }}
+    <div>
+        <p style="color: #DD3E77"><b> {{ .Data.ErrorMessage }} </b></p>
+    </div>
+    {{ end }}
+
+    <form method="post" autocomplete="off">
+        <label for="invite">Invite Code:</label>
+        <input type="text" required id="invite" name="invite" style="margin-bottom:0;" />
+        <div style="margin-bottom:1rem;"><small id="invite-notice">You must be invited to join the beta!</small></div>
+        
+        <!-- <br/><br/> -->
+
         <label for="username">Username:</label>
-        <input type="text" required id="username" name="username">
+        <input type="text" required id="username" name="username" style="text-transform: lowercase;" />
         <label for="password">Password:</label>
-        <input type="password" minlength="9" required id="password" name="password" aria-describedby="password-help" style="margin-bottom:0;">
+        <input type="password" minlength="9" required id="password" name="password" aria-describedby="password-help" style="margin-bottom:0;" />
         <div style="margin-bottom:1rem;"><small id="password-help">Must be at least 9 characters long.</small></div>
-        <label for="verificationlink">Verification link:</label>
+
+        <label for="email">Email (optional):</label>
+        <input type="text" id="email" name="email" style="margin-bottom:0;" />
+        <div style="margin-bottom:1rem;"><small id="email-notice">For password resets, we will not send you emails without your consent</small></div>
+
+        <!-- <br/> -->
+        <!-- <label for="verificationlink">Verification link:</label> -->
         <!-- <input type="text" required id="verification link" name="verificationlink"> -->
         <!-- <input type="hidden" name="verificationcode" value="{{.Data.VerificationCode}}"> -->
-        <div>
+        <!-- <div>
             <div>
                 <input type="checkbox" required id="coc">
                 <label for="coc" style="display: inline-block;">I have refreshed my memory of the <a target="_blank" href="https://github.com/merveilles/Resources/blob/master/CONDUCT.md">Merveilles Code of Conduct</a></label>
@@ -20,17 +40,9 @@
                 <input type="checkbox" required id="coc2" >
                 <label style="display: inline;" for="coc2">Yes, I have actually <a target="_blank" href="https://github.com/merveilles/Resources/blob/master/CONDUCT.md">read it</a></label>
             </div>
-        </div>
+        </div> -->
         <input type="submit" value="Register">
     </form>
-
-
-
-    {{ if .Data.ErrorMessage }}
-    <div>
-        <p><b> {{ .Data.ErrorMessage }} </b></p>
-    </div>
-    {{ end }}
 
 </main>
 {{ template "footer" . }}

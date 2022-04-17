@@ -1,34 +1,52 @@
 {{ template "head" . }}
 <main>
-    <h1>{{ .Data.Title }}</h1>
+    <h2><b>{{ .Data.Title }}</b></h2>
     {{ $userID := .LoggedInID }}
     {{ $threadURL := .Data.ThreadURL }}
+
+    {{ $participated := false }}
     {{ range $index, $post := .Data.Posts }}
-    <article id="{{ $post.ID }}">
-        <section aria-label="Post meta">
-            {{ if eq $post.AuthorID $userID }} 
-                <span style="float: right;" aria-label="Delete this post">
-                    <form style="display: inline-block;" method="POST" action="/post/delete/{{ $post.ID }}"
-                            onsubmit="return confirm('Delete post for all posterity?');"
-                        >
-                        <button class="delete_post" type="submit">delete</button>
-                        <input type="hidden" name="thread" value="{{ $threadURL }}">
-                    </form>
-                </span>
-            {{ end }}
-            <span class="visually-hidden">Author:</span>
-            <span><b>{{ $post.Author }}</b>
-                <span class="visually-hidden"> responded:</span>
-            </span>
-            <a href="#{{ $post.ID }}">
-                <span style="margin-left: 0.5rem; font-style: italic;">
-                    <time datetime="{{ $post.Publish | formatDate }}">{{ $post.Publish | formatDateRelative }}</time>
-                </span>
-            </a>
-        </section>
-        {{ $post.Content }}
-    </article>
+        {{ if eq $post.AuthorID $userID }}
+            {{$participated = true }}
+        {{ end }}
     {{ end }}
+
+    {{ $prompt := (index .Data.Posts 0) }}
+    <article id="{{ $prompt.ID }}">
+        {{ $prompt.Content }}
+    </article>
+    
+    {{ if $participated }}
+        {{ range $index, $post := .Data.Posts }}
+            {{ if gt $index 0 }}
+            <article id="{{ $post.ID }}">
+                <section aria-label="Post meta">
+                    {{ if eq $post.AuthorID $userID }} 
+                        <span style="float: right;" aria-label="Delete this post">
+                            <form style="display: inline-block;" method="POST" action="/post/delete/{{ $post.ID }}"
+                                    onsubmit="return confirm('Delete post for all posterity?');"
+                                >
+                                <button class="delete_post" type="submit">delete</button>
+                                <input type="hidden" name="thread" value="{{ $threadURL }}">
+                            </form>
+                        </span>
+                    {{ end }}
+                    <span class="visually-hidden">Author:</span>
+                    <span><b>{{ $post.Author }}</b>
+                        <span class="visually-hidden"> responded:</span>
+                    </span>
+                    <a href="#{{ $post.ID }}">
+                        <span style="margin-left: 0.5rem; font-style: italic;">
+                            <time datetime="{{ $post.Publish | formatDate }}">{{ $post.Publish | formatDateRelative }}</time>
+                        </span>
+                    </a>
+                </section>
+                {{ $post.Content }}
+            </article>
+            {{ end }}
+        {{ end }}
+    {{ end }}
+
     {{ if .LoggedIn }}
     <section aria-label="Respond into this thread">
         <form method="POST">
