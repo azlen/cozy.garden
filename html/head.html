@@ -17,9 +17,9 @@
         <link rel="manifest" href="/assets/favicons/site.webmanifest">
         <link rel="mask-icon" href="/assets/favicons/safari-pinned-tab.svg" color="#86c488">
         <link rel="shortcut icon" href="/assets/favicons/favicon.ico">
-        <meta name="msapplication-TileColor" content="#ffffff">
+        <meta name="msapplication-TileColor" content="#FBFFD2">
         <meta name="msapplication-config" content="/assets/favicons/browserconfig.xml">
-        <meta name="theme-color" content="#ffffff">
+        <meta name="theme-color" content="#FBFFD2">
 
         <meta property="og:title" content="Cozy Garden — together we learn" />
         <meta property="og:description" content="Grow ideas, participate in challenges, be creative" />
@@ -38,7 +38,8 @@
             }
             header {
                 display: flex;
-                justify-content: space-between;
+                /* justify-content: space-between; */
+                justify-content: flex-start;
                 align-items: center;
                 margin-bottom: 0.5rem;
             }
@@ -95,8 +96,9 @@
             tr:hover td { background:#e2cca2; }
 
             .post-container {
-                max-width: 30rem;
-                margin-top: 1rem;
+                /* max-width: 30rem; */
+                width: 100%;
+                margin-top: 2rem;
             }
             .post-container > * {
                 display: block;
@@ -180,8 +182,10 @@
 
             input[type="text"], input[type="password"], textarea {
                 background: #313D4E;
+                background: #000000;
                 color: #FBFFD2;
                 border: 1px solid #546855;
+                /* border: 1px solid #86C488; */
                 border-radius: 3px;
                 padding: 1px 6px;
                 outline: none;
@@ -221,8 +225,15 @@
                 /* font-family: monospace; */
             }
             .delete_post {
+                margin-right: -9px;
                 color: #FBFFD2;
                 background: transparent;
+                border: none;
+                padding: 4px !important;
+                opacity: 0.4;
+            }
+            .delete_post:hover {
+                opacity: 1;
             }
             h2 {
                 font-weight: normal;
@@ -235,6 +246,15 @@
                 text-decoration: underline;
             }
 
+            h1 {
+                /* max-width: calc(100vw - 4rem);
+                width: 800px; */
+                font-size: 20pt;
+                line-height: 1.1;
+                padding-top: 10px;
+                color: #86C488;
+            }
+
             /* main article:first-of-type section {
                 display: none;
             } */
@@ -242,8 +262,11 @@
             .chladni {
                 display: inline;
                 filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(25%);
-                margin: 2px 10px 0 0;
-                height: 23px;
+                /* margin: 2px 10px 0 0; */
+                /* margin: 3px 0px 0px 0px; */
+                margin: 0;
+                padding-top: 2px;
+                height: 25px;
                 vertical-align: text-top;
                 
                 cursor: pointer;
@@ -257,7 +280,7 @@
                 font-family: monospace;
                 font-size: 10px;
             }
-            h2 a {
+            h2 input[type="checkbox"] ~ a:last-child {
                 opacity: 0.2;
             }
             h2 input[type="checkbox"] {
@@ -267,18 +290,40 @@
                 display: inline;
             }
 
-            h2 input[type="checkbox"]:checked ~ label img {
+            h2 input[type="checkbox"]:checked ~ a .chladni {
                 filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(100%);
             }
             h2 input[type="checkbox"]:checked ~ a {
                 opacity: 1 !important;
             }
 
-            nav {
+            h2 input[type="checkbox"] + a {
+                /* display: inline-block; */
+                text-decoration: none;
+                margin: 0px 10px 0 0;
+                height: 23px;
+            }
+
+            nav#bottomnav {
                 position: fixed;
                 bottom: 1rem;
                 left: 2rem;
                 background: #0B160B;
+                z-index: 999;
+            }
+            nav#bottomnav:before {
+                content: "";
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 200px;
+                /* background: #FF0000; */
+                background: linear-gradient(180deg, rgba(21, 47, 22, 0) 0%, #152F16 100%);
+                background: linear-gradient(180deg, rgba(11, 22, 11, 0) 0%, #0B160B 100%);
+                background: linear-gradient(180deg, rgba(9, 14, 9, 0) 0%, #090E09 90%);
+                pointer-events: none;
+                z-index: -1;
             }
             nav a {
                 color: #86C488;
@@ -287,7 +332,7 @@
             }
             nav a:visited { color: #86C488 }
             nav a:hover {
-                color: #FFFFFF;
+                color: #FBFFD2;
                 text-decoration: underline;
             }
             small {
@@ -296,7 +341,149 @@
             input:focus + div>small {
                 opacity: 1;
             }
+
+            header > a { opacity: 0.2 }
+            header > a:hover { opacity: 0.3; filter: drop-shadow(0px 0px 5px #86C48899) }
+            header > a.selected {
+                opacity: 1;
+            }
+
+            .post {
+                background: #334B38;
+                padding: 10px 20px;
+                border: 2px solid #86C488;
+                border-radius: 5px;
+                margin-bottom: 1rem;
+                font-family: monospace !important;
+            }
+
+            textarea {
+                font-family: monospace;
+            }
+
+            {{ if (or (eq .Title "seeds") (eq .Title "community")) }}
+            main {
+                padding-bottom: 200px;
+            }
+
+            main h2 {
+                font-size: 15pt;
+            }
+            {{ end }}
+
+            {{ if eq .Title "community" }}
+            main h2 {
+                font-size: 12pt;
+            }
+
+            h2 a {
+                /* color: #86C488; */
+                opacity: 1;
+            }
+
+            h2 a:visited {
+                /* opacity: 1 !important; */
+                color: #3C5B3D;
+                color: #6D736D;
+                color: #6B735A;
+                /* opacity: 1; */
+            }
+
+            {{ end }}
             
+            .tip {
+                border-bottom: 1px dotted;
+                cursor: help;
+            }
+
+            .dot {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                margin: 0;
+                background: #86C488;
+                border-radius: 50px;
+            }
+            .dot.empty {
+                background: none;
+                border: 1px solid #86C488;
+            }
+
+            textarea {
+                padding: 10px 20px;
+            }
+
+            textarea:before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: #FF0000;
+                pointer-events: none;
+                z-index: 999999;
+            }
+
+            header {
+                position: relative;
+            }
+            #topnav {
+                position: absolute;
+                right: 0;
+            }
+            #topnav > ul > *, #topnav li a {
+                color: #FBFFD2 !important;
+            }
+            #topnav > ul > * { opacity: 0.5 }
+            #topnav details {
+                margin-right: 20px;
+            }
+
+            input[disabled], input[readonly] {
+                opacity: 0.4;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .spoiler {
+                cursor: pointer;
+            }
+
+            .spoiler input:not(:checked) + span {
+                background: #000000;
+                color: transparent;
+                user-select: none;
+            }
+            .spoiler input:not(:checked) + span::selection {
+                color: transparent;
+            }
+
+            .spoiler input:checked + span {
+                background: #00000055
+            }
+
+            /* sup {
+                line-height: 0;
+
+                font-size: 0.83em;
+                vertical-align: super;
+            } */
+
+            mark:not([style$=" "]) > span {
+                color: #FFFFFF;
+                filter: hue-rotate(180deg) brightness(0.9) invert(1) contrast(5);
+            }
+            /* mark > span {
+                filter: contrast(3);
+            } */
+
+            .separator {
+                text-align: center;
+                color: #86C488;
+            }
         </style>
 
         <!-- <link href="/assets/style.css" rel="stylesheet"> -->
@@ -318,7 +505,7 @@
     </head>
     <body>
         <header>
-            <a style="margin-bottom: 0; height: 48px;"  href="/" aria-label="Home">
+            <a style="margin-bottom: 0; margin-right: 10px; height: 48px;"  href="/" aria-label="Home" {{ if eq .Title "seeds" }} class="selected" {{ end }}>
                 <svg aria-hidden="true" style="margin-bottom: 0;" width="48" height="48" fill="#86C488" stroke="none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                   <!-- <g>
                     <path d="M185,65 A60,60 0 0,0 125,125 L185,125 Z M125,245 A60,60 0 0,0 185,185 L125,185 Z M95,125 A30,30 0 0,1 125,155 A30,30 0 0,1 95,185 A30,30 0 0,1 65,155 A30,30 0 0,1 95,125 Z M155,125 A30,30 0 0,1 185,155 A30,30 0 0,1 155,185 A30,30 0 0,1 125,155 A30,30 0 0,1 155,125 Z M215,125 A30,30 0 0,1 245,155 A30,30 0 0,1 215,185 A30,30 0 0,1 185,155 A30,30 0 0,1 215,125 "/>
@@ -331,8 +518,28 @@
                   </g>
                 </svg>
             </a>
-            {{ if eq .Title "seeds" }}
-            <nav>
+            <a style="margin-bottom: 0; height: 48px;" href="/community" aria-label="Community" {{ if eq .Title "community" }} class="selected" {{ end }}>
+                <svg aria-hidden="true" style="margin-bottom: 0" width="48" height="48" viewBox="0 0 200 200" fill="#86C488" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M49.4339 42.1435C62.7005 29.3116 79.6316 19.1832 88.6399 16.6731C97.6481 14.163 99.9286 14.2488 109.789 17.466C122.131 21.4926 138.634 30.4234 148.546 38.4394C168.029 54.1944 181.233 79.2524 184.464 106.599C185.568 115.949 185.569 182.831 184.464 183.936C183.856 184.545 175.826 184.767 146.003 185.002L53.6233 184.41H15.2955L14.8789 148.463C14.5907 123.542 14.6635 110.702 15.1162 106.599C17.8434 81.8992 29.6937 61.237 49.4339 42.1435ZM99.4954 105.508C110.466 105.508 119.359 96.6149 119.359 85.6444C119.359 74.6739 110.466 65.7805 99.4954 65.7805C88.5249 65.7805 79.6315 74.6739 79.6315 85.6444C79.6315 96.6149 88.5249 105.508 99.4954 105.508ZM71.8977 152.454C82.8682 152.454 91.7616 143.561 91.7616 132.59C91.7616 121.62 82.8682 112.726 71.8977 112.726C60.9272 112.726 52.0338 121.62 52.0338 132.59C52.0338 143.561 60.9272 152.454 71.8977 152.454ZM147.966 132.59C147.966 143.561 139.073 152.454 128.102 152.454C117.132 152.454 108.238 143.561 108.238 132.59C108.238 121.62 117.132 112.726 128.102 112.726C139.073 112.726 147.966 121.62 147.966 132.59Z"/>
+                </svg>
+            </a>
+            <!-- <nav id="topnav">
+                <ul type="menu">
+                    <details>
+                        <summary>share</summary>
+                        <ul>
+                            <li> <a href="/">azlen</a></li>
+                            <li> <a href="/">matt</a></li>
+                            <li> <input type="text" /></li>
+                        </ul>
+                    </details>
+                    <li><a href="/changelog">changelog</a></li>
+
+                </ul>
+            </nav> -->
+
+            {{ if (or (eq .Title "seeds") (eq .Title "community")) }}
+            <nav id="bottomnav">
                 <ul type="menu">
 
                 <!-- {{ if eq .Title "seeds" }}

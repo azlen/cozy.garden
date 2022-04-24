@@ -53,7 +53,10 @@ func createTables(db *sql.DB) {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     passwordhash TEXT NOT NULL,
-	gardenids TEXT NOT NULL
+	gardenids TEXT NOT NULL,
+	lastrefresh DATE,
+	invites INTEGER DEFAULT 0,
+	email TEXT
   );
   `,
 		`
@@ -118,6 +121,12 @@ func createTables(db *sql.DB) {
 	  date DATE,
 	  userid INTEGER,
 	  threadid INTEGER
+  )`,
+  `CREATE TABLE IF NOT EXISTS invites (
+	  id INTEGER PRIMARY KEY AUTOINCREMENT,
+	  code STRING NOT NULL UNIQUE,
+	  authorid INTEGER,
+	  recipientid INTEGER
   )`}
 
 	for _, query := range queries {
@@ -168,6 +177,14 @@ func (d DB) CreateThread(title, content string, authorid, topicid int) (int, err
 	}
 	err = tx.Commit()
 	ed.Check(err, "commit transaction")
+
+	d.SetLike(authorid, threadid, true)
+
+	// this doesn't seem to work?
+	stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%d," || gardenids WHERE id = %d`, threadid, authorid)
+	_, err = d.Exec(stmt)
+	util.Check(err, "adding thread %d to garden of user %s", threadid, authorid)
+
 	// finally return the id of the created thread, so we can do a friendly redirect
 	return threadid, nil
 }
@@ -244,6 +261,7 @@ type Thread struct {
 	Slug      string
 	ID        int
 	PostCount int
+	UserPostCount int
 	Publish   time.Time
 }
 
@@ -287,36 +305,38 @@ func (d DB) ListThreads(sortByPost bool) []Thread {
 
 // get a list of threads
 func (d DB) ListThreadsUser(userid int) []Thread {
-	query := fmt.Sprintf(`
-  SELECT count(t.id), t.title, t.id, u.name FROM threads t
-  INNER JOIN users u on u.id = t.authorid
-  INNER JOIN posts p ON t.id = p.threadid
-  WHERE t.id IN (
-	  WITH split(id, str) AS (
-		  SELECT '', gardenids||',' FROM users WHERE id = %d
-		  UNION ALL SELECT
-		  substr(str, 0, instr(str, ',')),
-		  substr(str, instr(str, ',')+1)
-		  FROM split WHERE str!=''
-	  ) SELECT cast(id AS INTEGER) FROM split WHERE id!=''
-  )
-  GROUP BY t.id
-`, userid)
-
-  //INNER JOIN users u on u.id = t.authorid
+// 	query := fmt.Sprintf(`
+//   SELECT count(t.id), t.title, t.id, u.name FROM threads t
+//   INNER JOIN users u on u.id = t.authorid
 //   INNER JOIN posts p ON t.id = p.threadid
+//   WHERE t.id IN (
+// 	  WITH split(id, str) AS (
+// 		  SELECT '', gardenids||',' FROM users WHERE id = %d
+// 		  UNION ALL SELECT
+// 		  substr(str, 0, instr(str, ',')),
+// 		  substr(str, instr(str, ',')+1)
+// 		  FROM split WHERE str!=''
+// 	  ) SELECT cast(id AS INTEGER) FROM split WHERE id!=''
+//   )
 //   GROUP BY t.id
-//   ORDER BY t.publishtime DESC
+// `, userid)
 
-// WHERE t.id IN (
-// 	WITH split(id, str) AS (
-// 		SELECT gardenids,',' FROM users WHERE id=%d
-// 		UNION ALL SELECT
-// 		substr(str, 0, instr(str, ',')),
-// 		substr(str, instr(str, ',')+1)
-// 		FROM split WHERE str!=''
-// 	) SELECT cast(id AS INTEGER) FROM split WHERE id!=''
-// )
+  	query := fmt.Sprintf(`
+		WITH split(id, str, ndx) AS (
+			SELECT '', gardenids||',',0 FROM users WHERE id = %d
+			UNION ALL SELECT
+			substr(str, 0, instr(str, ',')),
+			substr(str, instr(str, ',')+1),
+			ndx+1
+			FROM split WHERE str!=''
+		) SELECT count(t.id), t.title, t.id, u.name FROM split
+		INNER JOIN threads t ON t.id = split.id
+		INNER JOIN users u ON u.id = t.authorid
+		INNER JOIN posts p ON t.id = p.threadid
+		WHERE split.id != ''
+		GROUP BY t.id
+		ORDER BY split.ndx
+	`, userid)
 
 	stmt, err := d.db.Prepare(query)
 	util.Check(err, "list threads: prepare query")
@@ -349,7 +369,8 @@ func (d DB) RefreshThreads(userid int) {
 	threads := d.ListThreads(true)
 	// log.Println(threads)
 
-	newids := []int{}
+	// newids := []int{}
+	newids := d.GetLikes(userid)
 
 	for i := 0; i < 6; i++ {
 		index := rand.Intn(len(threads))
@@ -385,11 +406,236 @@ func (d DB) SetLike(userid int, threadid int, value bool) {
 	}
 }
 
+// type Like struct {
+// 	Title     string
+// 	Author    string
+// 	Slug      string
+// 	ID        int
+// 	PostCount int
+// 	Date   time.Time
+// }
+
+type Invite struct {
+	Code          string
+	Author        string
+	Recipient     string
+	Used		  bool
+
+	AuthorID      int
+	RecipientID   int
+}
+
+func (d DB) GenerateNewInvite(userid int) string {
+	var code string
+	var exists bool
+	var err error
+
+	BASE36 := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	// in the extremely rare chance that it generates a code that already exists
+	// it will regenerate until it generates a valid new invite code
+	for code == "" || exists {
+		code = ""
+		for i := 0; i < 7; i++ {
+			code = code + string(BASE36[rand.Intn(len(BASE36))])
+		}
+
+		exists, err = d.CheckInviteCodeExists(code)
+		util.Check(err, "generating invite code")
+
+		// fmt.Println(code)
+	}
+
+	stmt := `INSERT INTO invites (code, authorid) VALUES (?, ?)`
+	_, err = d.Exec(stmt, code, userid)
+	util.Check(err, "issuing invite code %s for user %d", code, userid)
+
+	return code
+}
+
+func (d DB) ListInvites(userid int) []Invite {
+	query := fmt.Sprintf(`
+		SELECT code, IFNULL(u.name, "") FROM invites
+		LEFT JOIN users u ON u.id = recipientid
+		WHERE authorid = %d
+	`, userid)
+
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "list invites: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	util.Check(err, "list invites: query")
+	defer rows.Close()
+
+	var data Invite
+	var invites []Invite
+	for rows.Next() {
+		if err := rows.Scan(&data.Code, &data.Recipient); err != nil {
+			log.Fatalln(util.Eout(err, "list invites: read in data via scan"))
+		}
+		
+		// has been used if we find a username for the recipient
+		data.Used = (data.Recipient != "")
+
+		invites = append(invites, data)
+	}
+	return invites
+}
+
+func (d DB) GetInvite(code string) (Invite, error) {
+	stmt := fmt.Sprintf(`
+		SELECT IFNULL(author.name, ""), IFNULL(recipient.name, ""), IFNULL(authorid, -1), IFNULL(recipientid, -1) FROM invites
+		LEFT JOIN users author ON author.id = authorid
+		LEFT JOIN users recipient ON recipient.id = recipientid
+		WHERE code = "%s"
+	`, code)
+
+	var data Invite
+	err := d.db.QueryRow(stmt).Scan(&data.Author, &data.Recipient, &data.AuthorID, &data.RecipientID)
+	if err != nil {
+		return data, util.Eout(err, "get invite")
+	}
+
+	data.Used = (data.Recipient != "")
+	data.Code = code
+
+	return data, nil
+}
+
+func (d DB) GetParticipatedThreads(userid int) []Thread {
+	query := fmt.Sprintf(`
+		SELECT
+			count(t.id),
+			(SELECT count(t2.id) FROM threads t2 INNER JOIN posts p2 ON p2.threadid = t2.id WHERE t2.id = p.threadid),
+			t.title,
+			t.id,
+			u.name
+		FROM posts p
+		LEFT OUTER JOIN threads t ON t.id = p.threadid
+		INNER JOIN users u ON u.id = t.authorid
+		WHERE p.authorid = %d
+		GROUP BY t.id
+		ORDER BY MAX(p.publishtime);
+	`, userid)
+
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "get participated threads: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	util.Check(err, "get participated threads: query")
+	defer rows.Close()
+
+	var postCount int
+	var userPostCount int
+	var data Thread
+	var threads []Thread
+	for rows.Next() {
+		if err := rows.Scan(&userPostCount, &postCount, &data.Title, &data.ID, &data.Author); err != nil {
+			log.Fatalln(util.Eout(err, "get participated threads: read in data via scan"))
+		}
+		data.Slug = util.GetThreadSlug(data.ID, data.Title, postCount)
+		data.PostCount = postCount
+		data.UserPostCount = userPostCount
+
+		// if you are the author of the thread and there is only one post
+		// don't count it as a participated thread??
+		// if !(postCount == 1 && data.ID == userid) {
+			threads = append(threads, data)
+		// }
+	}
+	return threads
+}
+
+func (d DB) GetLikes(userid int) []int {
+	query := fmt.Sprintf(`
+		SELECT threadid FROM likes
+		WHERE userid = %d
+		GROUP BY id
+	`, userid)
+
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "getting likes: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	util.Check(err, "getting likes: query")
+	defer rows.Close()
+
+	var threadid int
+	var likes []int
+	for rows.Next() {
+		if err := rows.Scan(&threadid); err != nil {
+			log.Fatalln(util.Eout(err, "getting likes: read in data via scan"))
+		}
+		
+		likes = append(likes, threadid)
+	}
+	return likes
+}
+
+func (d DB) GetNumberOfLikesThread(threadid int) int {
+	query := fmt.Sprintf(`
+		SELECT count(*) FROM likes
+		WHERE threadid = %d
+	`, threadid)
+
+	// likes, err := d.Exec(stmt, threadid)
+	// util.Check(err, "edit post %d", postid)
+
+	// fmt.Printf(likes.Next())
+
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "getting # of likes: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	util.Check(err, "getting # of likes: query")
+	defer rows.Close()
+
+	rows.Next()
+	var likes int
+	rows.Scan(&likes)
+
+	// fmt.Println(likes)
+
+	// var threadid int
+	// var likes []int
+	// for rows.Next() {
+	// 	if err := rows.Scan(&threadid); err != nil {
+	// 		log.Fatalln(util.Eout(err, "getting likes: read in data via scan"))
+	// 	}
+		
+	// 	likes = append(likes, threadid)
+	// }
+	return likes
+}
+
 func (d DB) AddPost(content string, threadid, authorid int) (postID int) {
 	stmt := `INSERT INTO posts (content, publishtime, threadid, authorid) VALUES (?, ?, ?, ?) RETURNING id`
 	publish := time.Now()
 	err := d.db.QueryRow(stmt, content, publish, threadid, authorid).Scan(&postID)
 	util.Check(err, "add post to thread %d (author %d)", threadid, authorid)
+
+	d.SetLike(authorid, threadid, false)
+
+	// splice the id of thread (if it exists) out of comma-separated gardenids
+	stmt = fmt.Sprintf(`
+	UPDATE users SET gardenids = (
+		WITH split(id, str) AS (
+			SELECT '', gardenids||',' FROM users WHERE id = %d
+			UNION ALL SELECT
+			substr(str, 0, instr(str, ',')),
+			substr(str, instr(str, ',')+1)
+			FROM split WHERE str!=''
+		) SELECT GROUP_CONCAT(id, ",") FROM split
+		WHERE id != "%d" AND id != ""
+	) WHERE id = %d;
+    `, authorid, threadid, authorid)
+	_, err = d.Exec(stmt)
+	util.Check(err, "removing thread %d from gardenids of user %d", threadid, authorid)
+
 	return
 }
 
@@ -430,13 +676,19 @@ func (d DB) DeleteTopic(topicid int) {
 	util.Check(err, "deleting topic %d", topicid)
 }
 
-func (d DB) CreateUser(name, hash string) (int, error) {
-	stmt := `INSERT INTO users (name, passwordhash) VALUES (?, ?) RETURNING id`
+func (d DB) CreateUser(name, hash, email, code string) (int, error) {
+	stmt := `INSERT INTO users (name, passwordhash, email) VALUES (?, ?, ?) RETURNING id`
 	var userid int
-	err := d.db.QueryRow(stmt, name, hash).Scan(&userid)
+	err := d.db.QueryRow(stmt, name, hash, email).Scan(&userid)
 	if err != nil {
 		return -1, util.Eout(err, "creating user %s", name)
 	}
+
+	// register that invite code has been used
+	stmt = `UPDATE invites SET recipientid = ? WHERE code = ?`
+	_, err = d.Exec(stmt, userid, code)
+	util.Check(err, "setting invite code %s as having been used by user %d", code, userid)
+
 	return userid, nil
 }
 
@@ -474,6 +726,13 @@ func (d DB) existsQuery(substmt string, args ...interface{}) (bool, error) {
 func (d DB) CheckUserExists(userid int) (bool, error) {
 	stmt := `SELECT 1 FROM users WHERE id = ?`
 	return d.existsQuery(stmt, userid)
+}
+
+func (d DB) CheckInviteCodeExists(code string) (bool, error) {
+	// stmt := `SELECT 1 FROM invites WHERE code = ?`
+	stmt := fmt.Sprintf(`SELECT 1 FROM invites WHERE code = "%s"`, code)
+	fmt.Println(stmt)
+	return d.existsQuery(stmt)
 }
 
 func (d DB) CheckNonceExists(nonce string) (bool, error) {

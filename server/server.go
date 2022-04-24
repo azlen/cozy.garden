@@ -38,6 +38,7 @@ type PasswordResetData struct {
 
 type IndexData struct {
 	Threads []database.Thread
+	Likes   []int
 }
 
 type GenericMessageData struct {
@@ -51,6 +52,7 @@ type GenericMessageData struct {
 type RegisterData struct {
 	VerificationCode string
 	ErrorMessage     string
+	Invite		     database.Invite
 }
 
 type RegisterSuccessData struct {
@@ -65,6 +67,12 @@ type ThreadData struct {
 	Title     string
 	Posts     []database.Post
 	ThreadURL string
+	Likes	  int
+}
+
+type InviteData struct {
+	Invites   []database.Invite
+	Available int
 }
 
 type RequestHandler struct {
@@ -133,6 +141,17 @@ var (
 		"chladniUrl": func(numPosts int) string {
 			return fmt.Sprintf("/assets/chladni/%d.png", min(numPosts * 100, 20000))
 		},
+		"add": func(a int, b int) int {
+			return a + b
+		},
+		"iterate": func(count *int) []int {
+            var i int
+            var Items []int
+            for i = 0; i < (*count); i++ {
+                Items = append(Items, i)
+            }
+            return Items
+        },
 	}
 
 	templates = template.Must(generateTemplates())
@@ -141,6 +160,7 @@ var (
 func generateTemplates() (*template.Template, error) {
 	views := []string{
 		"about",
+		"community",
 		"footer",
 		"generic-message",
 		"head",
@@ -153,6 +173,7 @@ func generateTemplates() (*template.Template, error) {
 		"thread",
 		"password-reset",
 		"landing",
+		"invite",
 	}
 
 	rootTemplate := template.New("root")
@@ -216,7 +237,10 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	for i, post := range thread {
 		thread[i].Content = util.Markup(post.Content)
 	}
-	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path}
+	
+	likes := h.db.GetNumberOfLikesThread(threadid)
+
+	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path, Likes: likes}
 	view := TemplateData{Data: &data, QuickNav: loggedIn, LoggedIn: loggedIn, LoggedInID: userid}
 	if len(thread) > 0 {
 		data.Title = thread[0].ThreadTitle
@@ -254,14 +278,75 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		// threads := h.db.ListThreads(mostRecentPost)
 
 		threads := h.db.ListThreadsUser(userid)
+		likes := h.db.GetLikes(userid)
 
 		// fmt.Println(threads)
 		
-		view := TemplateData{Data: IndexData{threads}, LoggedIn: loggedIn, Title: "seeds"}
+		view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "seeds"}
 		h.renderView(res, "index", view)
 	} else {
 		view := TemplateData{LoggedIn: loggedIn, Title: "seeds"}
 		h.renderView(res, "landing", view)
+	}
+}
+
+func (h RequestHandler) CommunityRoute(res http.ResponseWriter, req *http.Request) {
+	loggedIn, userid := h.IsLoggedIn(req)
+
+	if loggedIn {
+		// show index listing
+		// threads := h.db.ListThreads(mostRecentPost)
+
+		threads := h.db.GetParticipatedThreads(userid)
+		// likes := h.db.GetLikes(userid)
+		likes := []int{}
+
+		// fmt.Println(threads)
+		
+		view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "community"}
+		h.renderView(res, "community", view)
+	} else {
+		IndexRedirect(res, req)
+	}
+}
+
+func (h RequestHandler) InviteRoute(res http.ResponseWriter, req *http.Request) {
+	loggedIn, userid := h.IsLoggedIn(req)
+	code, codePresent := util.GetURLPortionString(req, 2)
+
+	fmt.Println(userid)
+
+	if codePresent {
+		if code == "new" && loggedIn {
+			// add a check to see if they are allowed
+			h.db.GenerateNewInvite(userid)
+			http.Redirect(res, req, "/invite", http.StatusSeeOther)
+			return
+		}
+
+		exists, _ := h.db.CheckInviteCodeExists(code)
+		
+		if exists {
+			http.Redirect(res, req, "/register/" + code, http.StatusSeeOther)
+		} else {
+			title := "Invalid Code"
+			data := GenericMessageData{
+				Title:   title,
+				Message: "The invite code you used is invalid or expired",
+			}
+			h.renderView(res, "generic-message", TemplateData{Data: data, Title: title})
+		}
+	} else {
+		// view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "community"}
+		if loggedIn {
+			invites := h.db.ListInvites(userid)
+			available := 0
+
+			view := TemplateData{Data: InviteData{invites, available}, LoggedIn: loggedIn, Title: "invite"}
+			h.renderView(res, "invite", view)
+		} else {
+			IndexRedirect(res, req)
+		}
 	}
 }
 
@@ -548,9 +633,41 @@ func (h RequestHandler) ResetPasswordRoute(res http.ResponseWriter, req *http.Re
 }
 
 func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request) {
+	urlInviteCode, codeExists := util.GetURLPortionString(req, 2)
+
+	var urlInvite database.Invite
+
+	var err error
+	var exists bool
+	if codeExists {
+		if exists, err = h.db.CheckInviteCodeExists(urlInviteCode); exists {
+			urlInvite, err = h.db.GetInvite(urlInviteCode)
+		} else {
+			urlInvite.Code = urlInviteCode
+		}
+	} else {
+		urlInvite.Code = ""
+	}
+
 	ed := util.Describe("register route")
-	loggedIn, _ := h.IsLoggedIn(req)
+	loggedIn, userid := h.IsLoggedIn(req)
+
+	fmt.Println(userid)
+
 	if loggedIn {
+		fmt.Println(exists, urlInvite.Code, urlInvite, urlInvite.AuthorID, userid)
+		if exists && urlInvite.AuthorID == userid {
+			data := GenericMessageData{
+				Title:       "Invite Your Friends!",
+				Message:     "This is your invite link. Copy the link in the address bar and send it to whomever you think might enjoy and participate in the community",
+				// Link:        "/",
+				// LinkMessage: "Visit the",
+				// LinkText:    "index",
+			}
+			h.renderView(res, "generic-message", TemplateData{Data: data, LoggedIn: loggedIn, Title: "invite"})
+			return
+		}
+
 		data := GenericMessageData{
 			Title:       "Register",
 			Message:     "You already have an account (you are logged in with it).",
@@ -562,14 +679,16 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 		return
 	}
 
+	fmt.Println(codeExists, exists, err, urlInvite.Code)
+
 	// var verificationCode string
 	renderErr := func(errFmt string, args ...interface{}) {
 		errMessage := fmt.Sprintf(errFmt, args...)
 		fmt.Println(errMessage)
-		h.renderView(res, "register", TemplateData{Data: RegisterData{"", errMessage}})
+		h.renderView(res, "register", TemplateData{Data: RegisterData{"", errMessage, database.Invite{}}})
 	}
 
-	var err error
+	
 	switch req.Method {
 	case "GET":
 		// try to get the verification code from the session (useful in case someone refreshed the page)
@@ -584,16 +703,42 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 		// 	}
 		// }
 
-		h.renderView(res, "register", TemplateData{Data: RegisterData{"", ""}})
+		h.renderView(res, "register", TemplateData{Data: RegisterData{"", "", urlInvite}})
 	case "POST":
 		// verificationCode, err = h.session.GetVerificationCode(req)
 		// if err != nil {
 		// 	renderErr("There was no verification record for this browser session; missing data to compare against verification link content")
 		// 	return
 		// }
-
+		
+		code := req.PostFormValue("invite")
+		email := req.PostFormValue("email")
 		username := req.PostFormValue("username")
 		password := req.PostFormValue("password")
+
+		// var exists bool
+		
+		var invite database.Invite
+		if code != "" {
+			if exists, err = h.db.CheckInviteCodeExists(code); exists {
+				invite, err = h.db.GetInvite(code)
+	
+				if invite.Used {
+					renderErr("Invite code has been used already")
+					return
+				}
+			} else if err!=nil {
+				renderErr("Error in checking invite code")
+				return
+			} else {
+				renderErr("Invite code provided does not exist")
+				return
+			}
+		} else {
+			renderErr("Please provide an invite code to register")
+			return
+		}
+		
 		// read verification code from form
 		// verificationLink := req.PostFormValue("verificationlink")
 		// fmt.Printf("user: %s, verilink: %s\n", username, verificationLink)
@@ -619,7 +764,7 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 		// }
 		
 		// make sure username is not registered already
-		var exists bool
+		// var exists bool
 		if exists, err = h.db.CheckUsernameExists(username); err != nil {
 			renderErr("Database had a problem when checking username")
 			return
@@ -634,7 +779,8 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 			return
 		}
 		var userID int
-		if userID, err = h.db.CreateUser(username, hash); err != nil {
+		if userID, err = h.db.CreateUser(username, hash, email, code); err != nil {
+			fmt.Println(ed.Eout(err, "creating user"))
 			renderErr("Error in db when creating user")
 			return
 		}
@@ -721,7 +867,7 @@ func (h RequestHandler) NewThreadRoute(res http.ResponseWriter, req *http.Reques
 			return
 		}
 		// when data has been stored => redirect to thread
-		slug := fmt.Sprintf("thread/%d/%s/", threadid, util.SanitizeURL(title))
+		slug := fmt.Sprintf("seed/%d/%s/", threadid, util.SanitizeURL(title))
 		http.Redirect(res, req, "/"+slug, http.StatusSeeOther)
 	default:
 		fmt.Println("non get/post method, redirecting to index")
@@ -799,7 +945,7 @@ func Serve(allowlist []string, sessionKey string, isdev bool) {
 	http.HandleFunc("/about", handler.AboutRoute)
 	http.HandleFunc("/logout", handler.LogoutRoute)
 	http.HandleFunc("/login", handler.LoginRoute)
-	http.HandleFunc("/register", handler.RegisterRoute)
+	http.HandleFunc("/register/", handler.RegisterRoute)
 	http.HandleFunc("/post/delete/", handler.DeletePostRoute)
 	http.HandleFunc("/seed/new/", handler.NewThreadRoute)
 	http.HandleFunc("/seed/", handler.ThreadRoute)
@@ -808,6 +954,9 @@ func Serve(allowlist []string, sessionKey string, isdev bool) {
 
 	http.HandleFunc("/refresh", handler.RefreshRoute)
 	http.HandleFunc("/seed/cultivate/", handler.LikePostRoute)
+
+	http.HandleFunc("/community", handler.CommunityRoute)
+	http.HandleFunc("/invite/", handler.InviteRoute)
 
 	fileserver := http.FileServer(http.Dir("html/assets/"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", fileserver))

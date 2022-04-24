@@ -1,0 +1,28 @@
+{{ template "head" . }}
+
+<div class="replanting">invite your friends!</div>
+
+<p>In order to slowly grow the community</p>
+
+<div class="replanting" style="margin: 0">You have {{ .Data.Available }} invite{{ if not (eq .Data.Available 1) }}s{{ end }} remaining:</div>
+{{ if gt .Data.Available 0 }}
+<a href="/invite/new">generate new invite</a>
+{{ else }}
+<a href="javascript:void(0)" style="opacity: 0.5; text-decoration: underline line-through">generate new invite</a>
+{{ end }}
+
+<main>
+    <ul style="display: flex; flex-direction: column-reverse;">
+	{{ range $index, $invite := .Data.Invites }}
+		<li>
+            {{ if not $invite.Used }}
+            <a href="/invite/{{ $invite.Code }}" style="font-family: monospace">{{ $invite.Code }}</a> <span style="opacity: 0.2">— not yet claimed</span>
+            {{ else }}
+            <span style="font-family: monospace; opacity: 0.5; text-decoration: line-through">{{ $invite.Code }}</span> <span style="opacity: 0.2">—</span> <span style="color: #86C488">claimed by <b>{{ $invite.Recipient }}</b></span>
+            {{ end }}
+        </li>
+	{{ end }}
+    </ul>
+</main>
+
+{{ template "footer" . }}

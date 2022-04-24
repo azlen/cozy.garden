@@ -1,35 +1,26 @@
 {{ template "head" . }}
 <!-- crop rotation? -->
 <!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
-<div class="replanting">
-	<span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in 2 hours.
-	<!--<a href="/refresh">refresh now</a>-->
-</div>
+<!-- <div class="replanting"><span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in 2 hours. <a href="/refresh">refresh now</a></a></div> -->
+<!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
+
+<div class="replanting">threads you've participated in...</div>
 
 <main>
-	{{ $likes := .Data.Likes}}
 	{{ range $index, $thread := .Data.Threads }}
-		{{ $cultivated := false }}
-
-		{{ range $index2, $likeid := $likes }}
-			{{ if eq $thread.ID $likeid }}
-				{{ $cultivated = true }}
-			{{ end }}
-		{{ end }}
-		
 		<h2>
-			<input id="seed{{ $thread.ID }}" type="checkbox" {{ if eq $cultivated true }} checked {{ end }} />
+			<!-- <input id="seed{{ $thread.ID }}" type="checkbox" {{ if eq true true }} checked {{ end }} /> -->
 			<!-- still need to get the likes and pass them into the template -->
-			<a href="/seed/cultivate/{{ if $cultivated }}0{{else}}1{{end}}/{{ $thread.ID }}" onclick="toggleLike.bind(this)(event)">
-				<img class="chladni" src="{{ $thread.PostCount | chladniUrl }}" title="cultivate" />
-			</a>
+			<!-- <a>
+                <img class="chladni" style="object-fit: cover; object-position: 0% 0; width: 9px; height: 18px;" src="{{ $thread.UserPostCount | chladniUrl }}" title="cultivate" /><img class="chladni" style="object-fit: cover; object-position: 100% 0; width: 9px; height: 18px;" src="{{ $thread.PostCount | chladniUrl }}" title="cultivate" />
+			</a> -->
 			
 			<a href="{{ $thread.Slug }}">{{ $thread.Title }}</a>
 		</h2>
 	{{ end }}
 </main>
 
-<script>
+<!-- <script>
 	function toggleLike(event) {
 		let checkbox = this.previousElementSibling
 		// prevent from following link when javascript is enabled
@@ -49,7 +40,7 @@
 
 		return false
 	}
-</script>
+</script> -->
 
 <!-- {{ if .LoggedIn }}
 <aside>

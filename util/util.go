@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"regexp"
 
 	"github.com/gomarkdown/markdown"
 	"github.com/microcosm-cc/bluemonday"
@@ -82,13 +83,63 @@ var strictContentGuardian = bluemonday.StrictPolicy()
 
 // Turns Markdown input into HTML
 func Markup(md template.HTML) template.HTML {
-	mdBytes := []byte(string(md))
+	mdString := string(md)
+
+	// replace
+	// mdString
+
+	mdBytes := []byte(mdString)
 	// fix newlines
 	mdBytes = markdown.NormalizeNewlines(mdBytes)
 	maybeUnsafeHTML := markdown.ToHTML(mdBytes, nil, nil)
 	// guard against malicious code being embedded
 	html := contentGuardian.SanitizeBytes(maybeUnsafeHTML)
-	return template.HTML(html)
+
+	html = []byte(CustomMarkup(string(html)))
+
+	out := template.HTML(html)
+
+	// fmt.Println(html)
+	// fmt.Println(CustomMarkup(string(out)))
+
+	return out
+}
+
+func CustomMarkup(md string) string {
+	inner := `([^\s]+(\s+[^\s]+)*)`
+
+	spoiler := regexp.MustCompile(fmt.Sprintf(`\|\|%s\|\|`, inner))
+	md = spoiler.ReplaceAllString(md, `<label class="spoiler"><input type="checkbox" style="display: none"/><span>${1}</span></label>`)
+
+	// could do these in one single regex if I can get the number of ^ or %
+	// super := regexp.MustCompile(`\^([^\s\^]+(\s+[^\s\^]+)*)\^`)
+	// for i := 0; i < 10; i++ {
+	// 	md = super.ReplaceAllString(md, `<sup>${1}</sup>`)
+	// }
+
+	// md = super.ReplaceAllFunc(md, func(s []byte) []byte {
+	// 	fmt.
+	// 	return test
+	// })
+
+	sub := regexp.MustCompile(`\%([^\s\%]+(\s+[^\s\%]+)*)\%`)
+	for i := 0; i < 10; i++ {
+		md = sub.ReplaceAllString(md, `<sub>${1}</sub>`)
+	}
+
+	super := regexp.MustCompile(`\^([^\s\^]+(\s+[^\s\^]+)*)\^`)
+	for i := 0; i < 10; i++ {
+		md = super.ReplaceAllString(md, `<sup>${1}</sup>`)
+	}
+
+	highlight := regexp.MustCompile(`::(\(([a-zA-Z0-9\#\-]+)\)\s+)?([^\s:]+(\s+[^\s:]+)*)::`)
+	for i := 0; i < 10; i++ {
+		md = highlight.ReplaceAllString(md, `<mark style="background: ${2}"><span style="color: ${2}">${3}</span></mark>`)
+	}
+
+	// fmt.Println(md)
+
+	return md
 }
 
 func SanitizeStringStrict(s string) string {
@@ -129,6 +180,15 @@ func GetURLPortion(req *http.Request, index int) (int, bool) {
 		return -1, false
 	}
 	return desiredID, true
+}
+
+func GetURLPortionString(req *http.Request, index int) (string, bool) {
+	parts := strings.Split(strings.TrimSpace(req.URL.Path), "/")
+	if len(parts) <= index || parts[index] == "" {
+		return "", false
+	}
+	
+	return parts[index], true
 }
 
 func ArrayToString(a []int, delim string) string {

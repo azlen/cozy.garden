@@ -1,6 +1,11 @@
 {{ template "head" . }}
+
+<div class="replanting" style="margin: 0">
+	Prompt:
+</div>
+
 <main>
-    <h2><b>{{ .Data.Title }}</b></h2>
+    <h1>{{ .Data.Title }}</h1>
     {{ $userID := .LoggedInID }}
     {{ $threadURL := .Data.ThreadURL }}
 
@@ -15,18 +20,51 @@
     <article id="{{ $prompt.ID }}">
         {{ $prompt.Content }}
     </article>
+
+    {{ range $index, $post := .Data.Posts }}
+        {{ if gt $index 0 }}
+            <div class="dot"></div>
+        {{ end }}
+    {{ end }}
+
+    {{ range $index, $post := iterate .Data.Likes }}
+        <div class="dot empty"></div>
+    {{ end }}
+
+    {{ if gt (len .Data.Posts) 1 }}
+        {{ if $participated }}
+        <div class="replanting">There have been {{ add (len .Data.Posts) -1 }} submissions to this prompt:</div>
+        {{ else }}
+        <div class="replanting">Participate to see other submissions:</div>
+        {{ end }}
+    {{ else }}
+    <div class="replanting">
+        Nobody has submitted yet! you could be the first:
+    </div>
+    {{ end }}
     
     {{ if $participated }}
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none" width="26" height="34" viewBox="0 0 26 34" fill="none">
+            <defs>
+                <path id="trash" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd" d="M19.5003 4.6665C18.3957 4.6665 17.5389 3.73117 17.0793 2.72681C16.3429 1.11782 14.7188 0 12.8337 0C10.9485 0 9.32439 1.11782 8.58804 2.72681C8.12839 3.73117 7.27161 4.6665 6.16706 4.6665H2.33333C1.04467 4.6665 0 5.71117 0 6.99984C0 8.2885 1.04467 9.33317 2.33333 9.33317H12.7943L12.8337 9.33333L12.873 9.33317H23.3333C24.622 9.33317 25.6667 8.2885 25.6667 6.99984C25.6667 5.71117 24.622 4.6665 23.3333 4.6665H19.5003ZM2.90877 13C1.41603 13 0.307179 14.3823 0.631001 15.8395L4.26063 32.1728C4.49787 33.2404 5.44477 34 6.5384 34H19.1283C20.2219 34 21.1688 33.2404 21.406 32.1728L25.0357 15.8395C25.3595 14.3823 24.2506 13 22.7579 13H2.90877Z"/>
+            </defs>
+        </svg>
+
         {{ range $index, $post := .Data.Posts }}
             {{ if gt $index 0 }}
-            <article id="{{ $post.ID }}">
+            <article id="{{ $post.ID }}" class="post">
                 <section aria-label="Post meta">
                     {{ if eq $post.AuthorID $userID }} 
                         <span style="float: right;" aria-label="Delete this post">
                             <form style="display: inline-block;" method="POST" action="/post/delete/{{ $post.ID }}"
                                     onsubmit="return confirm('Delete post for all posterity?');"
                                 >
-                                <button class="delete_post" type="submit">delete</button>
+                                <!-- <button class="delete_post" type="submit">delete</button> -->
+                                <button class="delete_post" type="submit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="margin: 0" width="10.4" height="13.6" viewBox="0 0 26 34" fill="none">
+                                        <use href="#trash" fill="#86C488" />
+                                    </svg>
+                                </button>
                                 <input type="hidden" name="thread" value="{{ $threadURL }}">
                             </form>
                         </span>
@@ -46,6 +84,15 @@
             {{ end }}
         {{ end }}
     {{ end }}
+    
+    {{ if and $participated (gt (len .Data.Posts) 0) }}
+    <div class="separator">᠅</div>
+
+    <div style="margin: 0">Craft another submission:</div>
+    <div class="replanting">
+        {{ .Data.Title }}
+    </div>
+    {{ end }}
 
     {{ if .LoggedIn }}
     <section aria-label="Respond into this thread">
@@ -53,10 +100,14 @@
             <div id="bottom" class="post-container" >
                 <label class="visually-hidden" for="content">Your answer:</label>
                 <textarea required name="content" id="content" placeholder="Tabula rasa"></textarea>
-                <button type="submit">Post</button>
+                <button type="submit">Submit</button>
             </div>
         </form>
     </section>
+    {{ else }}
+    <div class="replanting" style="margin: 0">
+        You need to <a href="/login">login</a> or <a href="/register">create an account</a> to participate
+    </div>
     {{ end }}
 </main>
 {{ template "footer" . }}

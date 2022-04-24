@@ -11,10 +11,14 @@
     {{ end }}
 
     <form method="post" autocomplete="off">
-        <label for="invite">Invite Code:</label>
-        <input type="text" required id="invite" name="invite" style="margin-bottom:0;" />
-        <div style="margin-bottom:1rem;"><small id="invite-notice">You must be invited to join the beta!</small></div>
-        
+        {{ $invited := and .Data.Invite.Author (not .Data.Invite.Used) }}
+        {{ if $invited }}
+        <div class="replanting" style="margin-bottom: 1rem;">You've been invited by <b>{{ .Data.Invite.Author }}</b>:</div>
+        {{ end }}
+        <!-- {{ if and .Data.Invite.Author (not .Data.Invite.Used)}} disabled {{ end }} -->
+        <label {{ if $invited }} class="hidden" {{ end }} for="invite">Invite Code:</label>
+        <input {{ if $invited }} class="hidden" {{ end }} type="text" required id="invite" name="invite" style="margin-bottom:0; font-family: monospace; font-size: 12pt; width: 150px" value="{{ .Data.Invite.Code }}" {{ if $invited }} readonly {{ end }} />
+        <div {{ if $invited }} class="hidden" {{ end }} style="margin-bottom:1rem;"><small id="invite-notice">You must be invited to join the beta!</small></div>
         <!-- <br/><br/> -->
 
         <label for="username">Username:</label>

@@ -48,6 +48,8 @@ func New(authKey string, developing bool) *Session {
 		HttpOnly: true,
 		Secure:   !developing,
 		MaxAge:   86400 * 30,
+		Path:     "/",
+    	// SameSite: http.SameSiteNoneMode,
 	}
 	short := sessions.NewCookieStore([]byte(authKey))
 	short.Options = &sessions.Options{
