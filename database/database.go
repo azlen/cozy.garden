@@ -665,7 +665,6 @@ func (d DB) GetLastRefresh(userid int) (time.Time, error) {
 		return time.UnixMicro(0), util.Eout(err, "get last refresh")
 	}
 	return lastrefresh, nil
-	// return lastrefresh, nil
 }
 
 func (d DB) CreateTopic(title, description string) {
@@ -693,7 +692,7 @@ func (d DB) DeleteTopic(topicid int) {
 }
 
 func (d DB) CreateUser(name, hash, email, code string) (int, error) {
-	stmt := `INSERT INTO users (name, passwordhash, email) VALUES (?, ?, ?) RETURNING id`
+	stmt := `INSERT INTO users (name, passwordhash, email, lastrefresh) VALUES (?, ?, ?, ?) RETURNING id`
 	var userid int
 	err := d.db.QueryRow(stmt, name, hash, email).Scan(&userid)
 	if err != nil {

@@ -313,22 +313,6 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	}
 	loggedIn, userid := h.IsLoggedIn(req)
 
-	lastrefresh, err := h.db.GetLastRefresh(userid)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	now := time.Now()
-	elapsed := now.Sub(lastrefresh)
-	remainingtime := refreshinterval * 60 * 60 - int(elapsed.Seconds())
-
-	// refreshinterval := 3 // hours
-	if elapsed.Hours() > float64(refreshinterval) {
-		h.db.RefreshThreads(userid)
-
-		remainingtime = refreshinterval * 60 * 60  // hours to minutes to seconds
-	}
-
 	// var mostRecentPost bool
 
 	// params := req.URL.Query()
@@ -338,6 +322,23 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 	// }
 
 	if loggedIn {
+		lastrefresh, err := h.db.GetLastRefresh(userid)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		now := time.Now()
+		elapsed := now.Sub(lastrefresh)
+		remainingtime := refreshinterval * 60 * 60 - int(elapsed.Seconds())
+
+		// refreshinterval := 3 // hours
+		if elapsed.Hours() > float64(refreshinterval) {
+			h.db.RefreshThreads(userid)
+
+			remainingtime = refreshinterval * 60 * 60  // hours to minutes to seconds
+		}
+
+		
 		// show index listing
 		// threads := h.db.ListThreads(mostRecentPost)
 
