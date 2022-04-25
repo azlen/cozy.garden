@@ -99,7 +99,7 @@
         <form method="POST">
             <div id="bottom" class="post-container" >
                 <label class="visually-hidden" for="content">Your answer:</label>
-                <textarea required name="content" id="content" placeholder="Tabula rasa"></textarea>
+                <textarea required name="content" id="content" placeholder="{{ .Data.Placeholder }}"></textarea>
                 <button type="submit">Submit</button>
             </div>
         </form>

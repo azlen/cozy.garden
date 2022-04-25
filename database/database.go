@@ -382,11 +382,16 @@ func (d DB) RefreshThreads(userid int) {
 		threads = append(threads[:index], threads[index+1:]...)
 	}
 
-	log.Println(util.ArrayToString(newids, ","))
+	gardenids := util.ArrayToString(newids, ",")
+	lastrefresh := time.Now()
 
-	stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%s" WHERE id = %d`, util.ArrayToString(newids, ","), userid)
-	_, err := d.Exec(stmt)
+	// stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%s",  WHERE id = %d`, util.ArrayToString(newids, ","), userid)
+	stmt := `UPDATE users SET gardenids = ?, lastrefresh = ? WHERE id = ?`
+	_, err := d.Exec(stmt, gardenids, lastrefresh, userid)
 	util.Check(err, "refresh threads for user %d", userid)
+
+	
+	// stmt = fmt.Sprintf(`UPDATE `)
 }
 
 func (d DB) SetLike(userid int, threadid int, value bool) {
@@ -650,6 +655,17 @@ func (d DB) DeletePost(postid int) error {
 	stmt := `DELETE FROM posts WHERE id = ?`
 	_, err := d.Exec(stmt, postid)
 	return util.Eout(err, "deleting post %d", postid)
+}
+
+func (d DB) GetLastRefresh(userid int) (time.Time, error) {
+	stmt := `SELECT lastrefresh FROM users where id = ?`
+	var lastrefresh time.Time
+	err := d.db.QueryRow(stmt, userid).Scan(&lastrefresh)
+	if err != nil {
+		return time.UnixMicro(0), util.Eout(err, "get last refresh")
+	}
+	return lastrefresh, nil
+	// return lastrefresh, nil
 }
 
 func (d DB) CreateTopic(title, description string) {

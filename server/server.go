@@ -10,6 +10,9 @@ import (
 	// "net/url"
 	"strings"
 	"time"
+	"os"
+	"math/rand"
+	"math"
 
 	"cerca/crypto"
 	"cerca/database"
@@ -37,8 +40,9 @@ type PasswordResetData struct {
 }
 
 type IndexData struct {
-	Threads []database.Thread
-	Likes   []int
+	Threads          []database.Thread
+	Likes            []int
+	SecondsRemaining int
 }
 
 type GenericMessageData struct {
@@ -64,10 +68,11 @@ type LoginData struct {
 }
 
 type ThreadData struct {
-	Title     string
-	Posts     []database.Post
-	ThreadURL string
-	Likes	  int
+	Title        string
+	Posts        []database.Post
+	ThreadURL    string
+	Likes	     int
+	Placeholder  string
 }
 
 type InviteData struct {
@@ -78,15 +83,36 @@ type InviteData struct {
 type RequestHandler struct {
 	db        *database.DB
 	session   *session.Session
-	allowlist []string // allowlist of domains valid for forum registration
+	// allowlist []string // allowlist of domains valid for forum registration
 }
 
 var developing bool
+var refreshinterval = 3 // hours
+var enoian []string
 
 func dump(err error) {
 	if developing {
 		fmt.Println(err)
 	}
+}
+
+func readLines(location string) []string {
+	// fmt.Println("READ LINES")
+	ed := util.Describe("read lines")
+	data, err := os.ReadFile(location)
+	ed.Check(err, "read file")
+	list := strings.Split(strings.TrimSpace(string(data)), "\n")
+	var processed []string
+	for _, line := range list {
+		// allow for commenting out lines
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
+			continue
+		}
+		
+		processed = append(processed, line)
+	}
+	// fmt.Println(string(data))
+	return processed
 }
 
 // returns true if logged in, and the userid of the logged in user.
@@ -152,6 +178,26 @@ var (
             }
             return Items
         },
+		"refreshTimerTime": func(seconds int) string {
+			hours := int(math.Floor(float64(seconds) / 3600.0))
+			minutes := int(math.Floor(float64(seconds) / 60.0)) % 60
+
+			timeMessage := ""
+
+			// only show `X minutes` if there is less than an hour remaining
+			if hours > 0 {
+				timeMessage = timeMessage + fmt.Sprintf("%d hour%s", hours, util.IfThenElse(hours!=1, "s", ""))
+			}
+
+			if minutes > 0 {
+				if hours > 0 {
+					timeMessage = timeMessage + " and "
+				}
+				timeMessage = timeMessage + fmt.Sprintf("%d minute%s", minutes, util.IfThenElse(minutes!=1, "s", ""))
+			}
+
+			return timeMessage
+		},
 	}
 
 	templates = template.Must(generateTemplates())
@@ -239,8 +285,9 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	}
 	
 	likes := h.db.GetNumberOfLikesThread(threadid)
+	placeholder := enoian[rand.Intn(len(enoian))]
 
-	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path, Likes: likes}
+	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path, Likes: likes, Placeholder: placeholder}
 	view := TemplateData{Data: &data, QuickNav: loggedIn, LoggedIn: loggedIn, LoggedInID: userid}
 	if len(thread) > 0 {
 		data.Title = thread[0].ThreadTitle
@@ -265,6 +312,23 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	loggedIn, userid := h.IsLoggedIn(req)
+
+	lastrefresh, err := h.db.GetLastRefresh(userid)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	now := time.Now()
+	elapsed := now.Sub(lastrefresh)
+	remainingtime := refreshinterval * 60 * 60 - int(elapsed.Seconds())
+
+	// refreshinterval := 3 // hours
+	if elapsed.Hours() > float64(refreshinterval) {
+		h.db.RefreshThreads(userid)
+
+		remainingtime = refreshinterval * 60 * 60  // hours to minutes to seconds
+	}
+
 	// var mostRecentPost bool
 
 	// params := req.URL.Query()
@@ -282,7 +346,7 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 
 		// fmt.Println(threads)
 		
-		view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "seeds"}
+		view := TemplateData{Data: IndexData{threads, likes, remainingtime}, LoggedIn: loggedIn, Title: "seeds"}
 		h.renderView(res, "index", view)
 	} else {
 		view := TemplateData{LoggedIn: loggedIn, Title: "seeds"}
@@ -303,7 +367,7 @@ func (h RequestHandler) CommunityRoute(res http.ResponseWriter, req *http.Reques
 
 		// fmt.Println(threads)
 		
-		view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "community"}
+		view := TemplateData{Data: IndexData{ threads, likes, 0 }, LoggedIn: loggedIn, Title: "community"}
 		h.renderView(res, "community", view)
 	} else {
 		IndexRedirect(res, req)
@@ -928,7 +992,7 @@ func (h RequestHandler) DeletePostRoute(res http.ResponseWriter, req *http.Reque
 	http.Redirect(res, req, threadURL, http.StatusSeeOther)
 }
 
-func Serve(allowlist []string, sessionKey string, isdev bool) {
+func Serve(sessionKey string, isdev bool) {
 	port := ":8272"
 	dbpath := "./data/forum.db"
 	if isdev {
@@ -937,8 +1001,11 @@ func Serve(allowlist []string, sessionKey string, isdev bool) {
 		port = ":8277"
 	}
 
+	enoian = readLines("enoian.txt")
+	// fmt.Println(enoian[7])
+
 	db := database.InitDB(dbpath)
-	handler := RequestHandler{&db, session.New(sessionKey, developing), allowlist}
+	handler := RequestHandler{&db, session.New(sessionKey, developing)}
 	/* note: be careful with trailing slashes; go's default handler is a bit sensitive */
 	// TODO (2022-01-10): introduce middleware to make sure there is never an issue with trailing slashes
 	http.HandleFunc("/reset/", handler.ResetPasswordRoute)

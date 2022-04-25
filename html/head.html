@@ -74,7 +74,7 @@
             article { margin-bottom: 2rem; }
             form div, label { margin-bottom: 0; }
             h1 a:visited,
-            a:not([class]) {
+            a {
                 color: #FBFFD2;
             }
             a:visited {
@@ -357,6 +357,11 @@
                 font-family: monospace !important;
             }
 
+            .post:target {
+                background: #55522b;
+                border: 2px solid #e0de34;
+            }
+
             textarea {
                 font-family: monospace;
             }
@@ -483,6 +488,16 @@
             .separator {
                 text-align: center;
                 color: #86C488;
+            }
+
+            code {
+                background: #00000066;
+                padding: 1px 4px;
+                color: #CCEEDD;
+            }
+
+            textarea::placeholder {
+                opacity: 0.7;
             }
         </style>
 

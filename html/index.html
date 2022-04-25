@@ -2,7 +2,7 @@
 <!-- crop rotation? -->
 <!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
 <div class="replanting">
-	<span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in 2 hours.
+	<span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in <span id="timer">{{ refreshTimerTime .Data.SecondsRemaining }}</span>
 	<!--<a href="/refresh">refresh now</a>-->
 </div>
 
@@ -30,6 +30,9 @@
 </main>
 
 <script>
+	let secondsRemainingOnLoad = {{ .Data.SecondsRemaining }};
+	let loadedTime = Date.now();
+
 	function toggleLike(event) {
 		let checkbox = this.previousElementSibling
 		// prevent from following link when javascript is enabled
@@ -49,6 +52,23 @@
 
 		return false
 	}
+
+	setInterval(function() {
+		let time = Date.now();
+		let elapsed = time - loadedTime;
+
+		let elapsedSeconds = Math.floor(elapsed / 1000); // milliseconds to seconds
+		let secondsRemaining = Math.max(secondsRemainingOnLoad - elapsedSeconds, 0);
+
+		let hours = Math.floor(secondsRemaining / 3600)
+		let minutes = Math.floor(secondsRemaining / 60) % 60
+
+		let timeMessage = `${hours>0? `${hours} hour${hours!=1?"s":""}` : ""}${hours>0&&minutes>0?" and ":""}${minutes>0 ? `${minutes} minute${minutes!=1?"s":""}` : ""}`
+
+		let timer = document.getElementById('timer')
+		timer.textContent = timeMessage
+
+	}, 1000 * 60)
 </script>
 
 <!-- {{ if .LoggedIn }}
