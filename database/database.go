@@ -698,7 +698,7 @@ func (d DB) DeleteTopic(topicid int) {
 func (d DB) CreateUser(name, hash, email, code string) (int, error) {
 	stmt := `INSERT INTO users (name, passwordhash, email, lastrefresh) VALUES (?, ?, ?, ?) RETURNING id`
 	var userid int
-	err := d.db.QueryRow(stmt, name, hash, email).Scan(&userid)
+	err := d.db.QueryRow(stmt, name, hash, email, time.UnixMicro(0)).Scan(&userid)
 	if err != nil {
 		return -1, util.Eout(err, "creating user %s", name)
 	}
