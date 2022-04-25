@@ -373,6 +373,10 @@ func (d DB) RefreshThreads(userid int) {
 	newids := d.GetLikes(userid)
 
 	for i := 0; i < 6; i++ {
+		if len(threads) == 0 {
+			continue
+		}
+
 		index := rand.Intn(len(threads))
 		
 		// add ID of new thread to the garden
