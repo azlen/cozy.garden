@@ -3,29 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/url"
+	// "net/url"
 	"os"
-	"strings"
+	// "strings"
 
 	"cerca/server"
-	"cerca/util"
+	// "cerca/util"
 )
-
-func readLines(location string) []string {
-	ed := util.Describe("read lines")
-	data, err := os.ReadFile(location)
-	ed.Check(err, "read file")
-	list := strings.Split(strings.TrimSpace(string(data)), "\n")
-	var processed []string
-	for _, fullpath := range list {
-		u, err := url.Parse(fullpath)
-		if err != nil {
-			continue
-		}
-		processed = append(processed, u.Host)
-	}
-	return processed
-}
 
 func complain(msg string) {
 	fmt.Printf("cozy garden: %s\n", msg)
