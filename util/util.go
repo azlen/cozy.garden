@@ -85,6 +85,9 @@ var strictContentGuardian = bluemonday.StrictPolicy()
 func Markup(md template.HTML) template.HTML {
 	mdString := string(md)
 
+	listfix := regexp.MustCompile(`((?:^|\n)[^-\n]+\n)(-|[0-9]+\.|\*)`)
+	mdString = listfix.ReplaceAllString(mdString, "${1}\n${2}")
+
 	// replace
 	// mdString
 
