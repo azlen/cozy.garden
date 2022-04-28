@@ -85,8 +85,19 @@ var strictContentGuardian = bluemonday.StrictPolicy()
 func Markup(md template.HTML) template.HTML {
 	mdString := string(md)
 
-	listfix := regexp.MustCompile(`((?:^|\n)[^-\n]+\n)(-|[0-9]+\.|\*)`)
-	mdString = listfix.ReplaceAllString(mdString, "${1}\n${2}")
+	// listfix := regexp.MustCompile(`((?:^|\n)[^-\n]+\n)(-|[0-9]+\.|\*)`)
+	// mdString = listfix.ReplaceAllString(mdString, `${1}\n${2}`)
+
+	// listfix := regexp.MustCompile(`((?:^|\n)(?!(?:-|[0-9]+\.|\*))[^\n]+\n)(-|[0-9]+\.|\*)`)
+	// mdString = listfix.ReplaceAllString(mdString, "${1}\n${2}")
+
+	mdString = regexp.MustCompile(`(.)\n(-|[0-9]+\.|\*)`).ReplaceAllString(mdString, "${1}֍${2}")
+	mdString = regexp.MustCompile(`^(-|[0-9]+\.|\*)(.+?)֍`).ReplaceAllString(mdString, "֍${1}${2}֍")
+	mdString = regexp.MustCompile(`(.)\n(.)`).ReplaceAllString(mdString, "$1\n\n$2")
+	mdString = regexp.MustCompile(`(^|\n)([^֍\n]+?)֍`).ReplaceAllString(mdString, "${1}${2}\n\n")
+	mdString = regexp.MustCompile(`֍`).ReplaceAllString(mdString, "\n")
+
+	// fmt.Println(mdString)
 
 	// replace
 	// mdString
