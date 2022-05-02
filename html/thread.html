@@ -4,6 +4,8 @@
 	Prompt:
 </div>
 
+{{ .Data.Fragment }}
+
 <main>
     <h1>{{ .Data.Title }}</h1>
     {{ $userID := .LoggedInID }}
@@ -23,7 +25,11 @@
 
     {{ range $index, $post := .Data.Posts }}
         {{ if gt $index 0 }}
-            <div class="dot"></div>
+            <div class="dot">
+                {{ if gt (len $post.Comments) 0 }}
+                    <div class="outerdot" style="transform: scale({{ divide (float (add (len $post.Comments) 10)) 8.0 }})"></div>
+                {{ end }}
+            </div>
         {{ end }}
     {{ end }}
 
@@ -42,6 +48,8 @@
         Nobody has submitted yet! you could be the first:
     </div>
     {{ end }}
+
+    {{ $open := .Data.Open }}
     
     {{ if $participated }}
         <svg xmlns="http://www.w3.org/2000/svg" style="display: none" width="26" height="34" viewBox="0 0 26 34" fill="none">
@@ -80,6 +88,40 @@
                     </a>
                 </section>
                 {{ $post.Content }}
+                <details class="comments" {{ if eq $open (intToString $post.ID) }} open {{ end }}>
+                    <summary>
+                        {{ if gt (len $post.Comments) 0 }}
+                            Comments ({{ len $post.Comments }})
+                        {{ else }}
+                            Comment
+                        {{ end }}
+                    </summary>
+                    {{ range $_, $comment := $post.Comments }}
+                    <article id="{{ $comment.ID }}" class="comment">
+                        <!-- comment author -->
+                        <section aria-label="Comment meta">
+                            <span class="visually-hidden">Author:</span>
+                            <span><b>{{ $comment.Author }}</b>
+                                <span class="visually-hidden"> commented:</span>
+                            </span>
+                            <a href="#{{ $comment.ID }}">
+                                <span style="margin-left: 0.5rem; font-style: italic;">
+                                    <time datetime="{{ $comment.Publish | formatDate }}">{{ $comment.Publish | formatDateRelative }}</time>
+                                </span>
+                            </a>
+                        </section> 
+                        {{ $comment.Content }}
+                        <!-- That's fantastic! I love the part where the turtle appears -->
+                    </article>
+                    {{ end }}
+                    <form method="POST">
+                        <div class="post-container">
+                            <textarea required name="content"></textarea>
+                            <input type="hidden" name="post_id" value="{{ $post.ID }}">
+                            <button type="submit" name="action" value="comment">Comment</button>
+                        </div>
+                    </form>
+                  </details>
             </article>
             {{ end }}
         {{ end }}
@@ -100,7 +142,7 @@
             <div id="bottom" class="post-container" >
                 <label class="visually-hidden" for="content">Your answer:</label>
                 <textarea required name="content" id="content" placeholder="{{ .Data.Placeholder }}"></textarea>
-                <button type="submit">Submit</button>
+                <button type="submit" name="action" value="submission">Submit</button>
             </div>
         </form>
     </section>

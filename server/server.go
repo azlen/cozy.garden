@@ -9,6 +9,7 @@ import (
 	"net/http"
 	// "net/url"
 	"strings"
+	"strconv"
 	"time"
 	"os"
 	"math/rand"
@@ -73,6 +74,8 @@ type ThreadData struct {
 	ThreadURL    string
 	Likes	     int
 	Placeholder  string
+	Fragment	 string
+	Open		 string
 }
 
 type InviteData struct {
@@ -198,6 +201,15 @@ var (
 
 			return timeMessage
 		},
+		"intToString": func(num int) string {
+			return strconv.Itoa(num)
+		},
+		"float": func(num int) float64 {
+			return float64(num)
+		},
+		"divide": func(a, b float64) float64 {
+			return a / b
+		},
 	}
 
 	templates = template.Must(generateTemplates())
@@ -251,9 +263,8 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	loggedIn, userid := h.IsLoggedIn(req)
 
 	if !ok {
-		title := "Thread not found"
 		data := GenericMessageData{
-			Title:   title,
+			Title:   "Thread not found",
 			Message: "The thread does not exist (anymore?)",
 		}
 		h.renderView(res, "generic-message", TemplateData{Data: data, LoggedIn: loggedIn})
@@ -263,22 +274,57 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	if req.Method == "POST" && loggedIn {
 		// handle POST (=> add a reply, then show the thread)
 		content := req.PostFormValue("content")
-		// TODO (2022-01-09): make sure rendered content won't be empty after sanitizing:
-		// * run sanitize step && strings.TrimSpace and check length **before** doing AddPost
-		// TODO(2022-01-09): send errors back to thread's posting view
-		_ = h.db.AddPost(content, threadid, userid)
-		// we want to effectively redirect to <#posts+1> to mark the thread as read in the thread index
-		// TODO(2022-01-30): find a solution for either:
-		// * scrolling to thread bottom (and maintaining the same slug, important for visited state in browser)
-		// * passing data to signal "your post was successfully added" (w/o impacting visited state / url)
-		posts := h.db.GetThread(threadid)
-		newSlug := util.GetThreadSlug(threadid, posts[0].ThreadTitle, len(posts))
-		http.Redirect(res, req, newSlug, http.StatusFound)
+		action := req.PostFormValue("action")
+
+		if action == "submission" {
+			// TODO (2022-01-09): make sure rendered content won't be empty after sanitizing:
+			// * run sanitize step && strings.TrimSpace and check length **before** doing AddPost
+			// TODO(2022-01-09): send errors back to thread's posting view
+			_ = h.db.AddPost(content, threadid, userid)
+			// we want to effectively redirect to <#posts+1> to mark the thread as read in the thread index
+			// TODO(2022-01-30): find a solution for either:
+			// * scrolling to thread bottom (and maintaining the same slug, important for visited state in browser)
+			// * passing data to signal "your post was successfully added" (w/o impacting visited state / url)
+			posts := h.db.GetThread(threadid)
+			newSlug := util.GetThreadSlug(threadid, posts[0].ThreadTitle, len(posts))
+			http.Redirect(res, req, newSlug, http.StatusFound)
+		} else if action == "comment" {
+			postid, err := strconv.Atoi(req.PostFormValue("post_id"))
+
+			if err != nil {
+				fmt.Println(err)
+
+				data := GenericMessageData{
+					Title:   "Error posting comment",
+					Message: "The data received appears corrupted or tampered with, maybe try again?",
+				}
+				h.renderView(res, "generic-message", TemplateData{Data: data, LoggedIn: loggedIn})
+
+				return
+			}
+
+			commentid := h.db.AddComment(content, threadid, userid, postid)
+
+			fmt.Println(req.URL)
+			http.Redirect(res, req, fmt.Sprintf("%s#%d", req.URL.Path, commentid), http.StatusFound)
+		}
+		
 		return
 	}
 	// TODO (2022-01-07):
 	// * handle error
 	thread := h.db.GetThread(threadid)
+
+	if len(thread) == 0 {
+		title := "Thread not found"
+		data := GenericMessageData{
+			Title:   title,
+			Message: "This thread does not exist (anymore?)",
+		}
+		h.renderView(res, "generic-message", TemplateData{Data: data, LoggedIn: loggedIn})
+		return
+	}
+
 	// markdownize content (but not title)
 	for i, post := range thread {
 		thread[i].Content = util.Markup(post.Content)
@@ -287,7 +333,9 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	likes := h.db.GetNumberOfLikesThread(threadid)
 	placeholder := enoian[rand.Intn(len(enoian))]
 
-	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path, Likes: likes, Placeholder: placeholder}
+	open := req.URL.Query().Get("open")
+
+	data := ThreadData{Posts: thread, ThreadURL: req.URL.Path, Likes: likes, Placeholder: placeholder, Fragment: req.URL.Fragment, Open: open}
 	view := TemplateData{Data: &data, QuickNav: loggedIn, LoggedIn: loggedIn, LoggedInID: userid}
 	if len(thread) > 0 {
 		data.Title = thread[0].ThreadTitle

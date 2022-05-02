@@ -361,9 +361,14 @@
                 background: #55522b;
                 border: 2px solid #e0de34;
             }
+            .comment:target {
+                background: #55522b;
+                border: 2px solid #e0de34;
+            }
 
             textarea {
                 font-family: monospace;
+                resize: vertical;
             }
 
             {{ if (or (eq .Title "seeds") (eq .Title "community")) }}
@@ -402,6 +407,7 @@
             }
 
             .dot {
+                position: relative;
                 display: inline-block;
                 width: 10px;
                 height: 10px;
@@ -498,6 +504,69 @@
 
             textarea::placeholder {
                 opacity: 0.7;
+            }
+
+            .comments, .comments > summary {
+                margin: 0;
+            }
+            .comments summary {
+                cursor: pointer;
+            }
+            .comments:not([open]) {
+                opacity: 0.5;
+            }
+
+            .comment {
+                margin: 5px 0px 5px 0px;
+                background: #00000044;
+                padding: 5px 10px;
+            }
+
+            section[aria-label~="meta"] {
+                opacity: 0.5;
+            }
+
+            summary {
+                user-select: none;
+            }
+            
+            summary {list-style: none}
+            summary::-webkit-details-marker {display: none; }
+
+            details summary::before { 
+                content:"ᐅ"; 
+                color: #FBFFD2;
+                display: inline-block;
+                margin-right: 8px; 
+                /* transition: all .15s; */
+                /* you can style it however you want, use background-image for example */
+            }
+
+            /* By using [open] we can define different styles when the disclosure widget is open */
+            details[open] summary::before { 
+                /* content:"🡑";  */
+                /* margin-top: -3px; */
+                /* padding-top: 2px; */
+                transform: rotate(90deg);
+            }
+
+            .post .post-container {
+                margin-top: 15px;
+            }
+            .post .post-container textarea {
+                background: #00000088;
+                padding: 5px 10px;
+            }
+
+            .outerdot {
+                position: absolute;
+                margin: 0;
+                top: 0; left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 50px;
+                background: #86C488;
+                opacity: 0.2;
             }
         </style>
 

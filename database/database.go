@@ -112,6 +112,7 @@ func createTables(db *sql.DB) {
     lastedit DATE,
     authorid INTEGER,
     threadid INTEGER,
+	replyto INTEGER,
     FOREIGN KEY(authorid) REFERENCES users(id),
     FOREIGN KEY(threadid) REFERENCES threads(id)
   );
@@ -200,6 +201,7 @@ type Post struct {
 	AuthorID    int
 	Publish     time.Time
 	LastEdit    sql.NullTime // TODO: handle json marshalling with custom type
+	Comments	[]Post
 }
 
 func (d DB) DeleteThread() {}
@@ -220,6 +222,7 @@ func (d DB) GetThread(threadid int) []Post {
   INNER JOIN users u ON u.id = p.authorid 
   INNER JOIN threads t ON t.id = p.threadid
   WHERE threadid = ? 
+  AND p.replyto IS NULL
   ORDER BY p.publishtime
   `
 	stmt, err := d.db.Prepare(query)
@@ -235,6 +238,44 @@ func (d DB) GetThread(threadid int) []Post {
 	for rows.Next() {
 		if err := rows.Scan(&data.ID, &data.ThreadTitle, &data.Content, &data.Author, &data.AuthorID, &data.Publish, &data.LastEdit); err != nil {
 			log.Fatalln(util.Eout(err, "get data for thread %d", threadid))
+		}
+
+		data.Comments = d.GetComments(data.ID)
+
+		posts = append(posts, data)
+	}
+	return posts
+}
+
+func (d DB) GetComments(postid int) []Post {
+	// TODO: make edit work if no edit timestamp detected e.g.
+	// (sql: Scan error on column index 3, name "lastedit": unsupported Scan, storing driver.Value type <nil> into type
+	// *time.Time)
+
+	// join with:
+	//    users table to get user name
+	//    threads table to get thread title
+	query := `
+  SELECT p.id, t.title, content, u.name, p.authorid, p.publishtime, p.lastedit
+  FROM posts p 
+  INNER JOIN users u ON u.id = p.authorid 
+  INNER JOIN threads t ON t.id = p.threadid
+  WHERE replyto = ?
+  ORDER BY p.publishtime
+  `
+	stmt, err := d.db.Prepare(query)
+	util.Check(err, "get thread: prepare query")
+	defer stmt.Close()
+
+	rows, err := stmt.Query(postid)
+	util.Check(err, "get thread: query")
+	defer rows.Close()
+
+	var data Post
+	var posts []Post
+	for rows.Next() {
+		if err := rows.Scan(&data.ID, &data.ThreadTitle, &data.Content, &data.Author, &data.AuthorID, &data.Publish, &data.LastEdit); err != nil {
+			log.Fatalln(util.Eout(err, "get comments for post %d", postid))
 		}
 		posts = append(posts, data)
 	}
@@ -645,7 +686,7 @@ func (d DB) AddPost(content string, threadid, authorid int) (postID int) {
 	_, err = d.Exec(stmt)
 	util.Check(err, "removing thread %d from gardenids of user %d", threadid, authorid)
 
-	return
+	return postID
 }
 
 func (d DB) EditPost(content string, postid int) {
@@ -659,6 +700,15 @@ func (d DB) DeletePost(postid int) error {
 	stmt := `DELETE FROM posts WHERE id = ?`
 	_, err := d.Exec(stmt, postid)
 	return util.Eout(err, "deleting post %d", postid)
+}
+
+func (d DB) AddComment(content string, threadid, authorid int, replyto int) (postID int) {
+	stmt := `INSERT INTO posts (content, publishtime, threadid, authorid, replyto) VALUES (?, ?, ?, ?, ?) RETURNING id`
+	publish := time.Now()
+	err := d.db.QueryRow(stmt, content, publish, threadid, authorid, replyto).Scan(&postID)
+	util.Check(err, "add comment to post %d (author %d)", replyto, authorid)
+
+	return postID
 }
 
 func (d DB) GetLastRefresh(userid int) (time.Time, error) {
