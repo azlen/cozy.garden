@@ -328,6 +328,11 @@ func (h RequestHandler) ThreadRoute(res http.ResponseWriter, req *http.Request) 
 	// markdownize content (but not title)
 	for i, post := range thread {
 		thread[i].Content = util.Markup(post.Content)
+
+		comments := thread[i].Comments
+		for j, comment := range comments {
+			comments[j].Content = util.Markup(comment.Content)
+		}
 	}
 	
 	likes := h.db.GetNumberOfLikesThread(threadid)
