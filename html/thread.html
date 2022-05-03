@@ -39,7 +39,11 @@
 
     {{ if gt (len .Data.Posts) 1 }}
         {{ if $participated }}
-        <div class="replanting">There have been {{ add (len .Data.Posts) -1 }} submissions to this prompt:</div>
+            {{ if eq (add (len .Data.Posts) -1) 1 }}
+            <div class="replanting">There has been 1 submission to this prompt:</div>
+            {{ else }}
+            <div class="replanting">There have been {{ add (len .Data.Posts) -1 }} submissions to this prompt:</div>
+            {{ end }}
         {{ else }}
         <div class="replanting">Participate to see other submissions:</div>
         {{ end }}
