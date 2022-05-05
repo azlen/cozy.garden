@@ -146,7 +146,7 @@ func CustomMarkup(md string) string {
 		md = super.ReplaceAllString(md, `<sup>${1}</sup>`)
 	}
 
-	highlight := regexp.MustCompile(`::(\(([a-zA-Z0-9\#\-]+)\)\s+)?([^\s:]+(\s+[^\s:]+)*)::`)
+	highlight := regexp.MustCompile(`::(\(([a-zA-Z0-9\#\-]+)\)\s+)?([^\s]+(\s+?[^\s]+?)*)::`)
 	for i := 0; i < 10; i++ {
 		md = highlight.ReplaceAllString(md, `<mark style="background: ${2}"><span style="color: ${2}">${3}</span></mark>`)
 	}
