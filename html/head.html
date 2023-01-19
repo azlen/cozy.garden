@@ -9,13 +9,13 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Vollkorn&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Vollkorn&family=Space+Grotesk&display=swap" rel="stylesheet">
 
         <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicons/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicons/favicon-16x16.png">
         <link rel="manifest" href="/assets/favicons/site.webmanifest">
-        <link rel="mask-icon" href="/assets/favicons/safari-pinned-tab.svg" color="#86c488">
+        <link rel="mask-icon" href="/assets/favicons/safari-pinned-tab.svg" color="#ff5532">
         <link rel="shortcut icon" href="/assets/favicons/favicon.ico">
         <meta name="msapplication-TileColor" content="#FBFFD2">
         <meta name="msapplication-config" content="/assets/favicons/browserconfig.xml">
@@ -26,6 +26,9 @@
         <meta property="og:image" content="/assets/og-image.png" />
 
          <style>
+            /* nice pale blue: 9091D2 */
+
+
             /* reset */
             *,*::after,*::before{box-sizing:border-box}blockquote,body,dd,dl,figure,h1,h2,h3,h4,p{margin:0}ul[role='list'],ol[role='list']{list-style:none}html:focus-within{scroll-behavior:smooth}body{min-height:100vh;text-rendering:optimizeSpeed;line-height:1.5}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;display:block}button,input,select,textarea{font:inherit}@media (prefers-reduced-motion: reduce){html:focus-within{scroll-behavior:auto}*,*::after,*::before{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}}
             /* end reset */
@@ -33,16 +36,35 @@
                design mockups, welcome from the community for v2,v3,...,vn :) */
             br { margin-bottom: unset; }
             html {
-                max-width: 40rem;
-                font-family: "Vollkorn", sans-serif;
+                /* max-width: 40rem; */
+                font-family: "Space Grotesk", "Vollkorn", sans-serif;
+                overscroll-behavior-y: none;
             }
             header {
                 display: flex;
+                flex-direction: column;
                 /* justify-content: space-between; */
                 justify-content: flex-start;
-                align-items: center;
-                margin-bottom: 0.5rem;
+                align-items: flex-start;
+                /* margin-right: 0.5rem; */
+                
             }
+            header a svg { width: 100%; height: 100%; }
+            /* header a svg * { fill: rgb(136, 73, 91) } */
+            header .nav-item * { fill: #FBFFD2 }
+
+            header .nav-item {
+                position: relative;
+                opacity: 1;
+                width: 35px;
+                height: 35px;
+                margin-bottom: 0;
+                margin: 0 auto;
+            }
+            header .nav-item:hover {
+                /* opacity: 0.8; */
+            }
+
             label {
                 display: block;
             }
@@ -55,6 +77,7 @@
                 width: 48px;
                 height: 48px;
                 display: block;
+                margin-bottom: 10px !important;
             }
 			ul[type="menu"] {
 				display: flex;
@@ -105,7 +128,13 @@
                 width: 100%;
             }
 
-            body { padding: 2rem; background: #0B160B; color: #FBFFD2 }
+            body {
+                padding: 5rem;
+                background: #000000;
+                color: #FBFFD2;
+                /* background: rgb(142, 87, 89); */
+                display: flex;
+            }
             * { margin-bottom: 1rem; }
 
             .visually-hidden {
@@ -116,6 +145,10 @@
                 position: absolute;
                 white-space: nowrap;
                 width: 1px;
+            }
+
+            header {
+                flex: 0 0 fit-content;
             }
 
             header nav {
@@ -185,13 +218,13 @@
                 background: #000000;
                 color: #FBFFD2;
                 border: 1px solid #546855;
-                /* border: 1px solid #86C488; */
+                /* border: 1px solid #ff5532; */
                 border-radius: 3px;
                 padding: 1px 6px;
                 outline: none;
             }
             input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
-                border-color: #86C488;
+                border-color: #ff5532;
             }
             /* input:-internal-autofill-selected {
                 background: #FF0000 !important;
@@ -213,8 +246,8 @@
                 border: none;
                 cursor: pointer;
 
-                background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 6.1%, rgba(0, 0, 0, 0) 100%), #86C488;
-                border: 1px solid #86C488;
+                background: linear-gradient(0deg, rgba(0, 0, 0, 0.25) 6.1%, rgba(0, 0, 0, 0) 100%), #ff5532;
+                border: 1px solid #ff5532;
                 box-sizing: border-box;
                 border-radius: 3px;
                 
@@ -230,7 +263,10 @@
                 background: transparent;
                 border: none;
                 padding: 4px !important;
-                opacity: 0.4;
+                opacity: 0.2;
+            }
+            .delete_post svg * {
+                fill: #ff5532;
             }
             .delete_post:hover {
                 opacity: 1;
@@ -251,8 +287,8 @@
                 width: 800px; */
                 font-size: 20pt;
                 line-height: 1.1;
-                padding-top: 10px;
-                color: #86C488;
+                /* padding-top: 2px; */
+                color: #ff5532;
             }
 
             /* main article:first-of-type section {
@@ -261,7 +297,11 @@
 
             .chladni {
                 display: inline;
-                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(25%);
+                /* filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(25%); */
+                filter: invert();
+                filter: invert() brightness(80%) grayscale(100%) contrast(9000%);
+                background: #FFFFFF;
+                /* opacity: 0.25; */
                 /* margin: 2px 10px 0 0; */
                 /* margin: 3px 0px 0px 0px; */
                 margin: 0;
@@ -271,12 +311,28 @@
                 
                 cursor: pointer;
             }
-            .chladni:hover {
-                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(60%);
+            a[href*='/cultivate/'] {
+                position: relative;
+                opacity: 0.25;
+                font-size: 0pt;
+                display: inline-block;
+                vertical-align: text-top;
+            }
+            a[href*='/cultivate/']:hover {
+                opacity: 0.6;
+            }
+            a[href*='/cultivate/']::before {
+                content: "";
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: #FBFFD2;
+                mix-blend-mode: darken;
+                z-index: 999;
             }
 
             .replanting {
-                color: #86C488;
+                color: #ff5532;
                 font-family: monospace;
                 font-size: 10px;
             }
@@ -290,9 +346,9 @@
                 display: inline;
             }
 
-            h2 input[type="checkbox"]:checked ~ a .chladni {
-                filter: invert(75%) sepia(55%) saturate(245%) hue-rotate(72deg) brightness(86%) contrast(88%) brightness(100%);
-            }
+            /* h2 input[type="checkbox"]:checked ~ a .chladni {
+                opacity: 1;
+            } */
             h2 input[type="checkbox"]:checked ~ a {
                 opacity: 1 !important;
             }
@@ -302,6 +358,32 @@
                 text-decoration: none;
                 margin: 0px 10px 0 0;
                 height: 23px;
+            }
+
+
+            main {
+                position: relative;
+                flex: 1;
+                max-width: 600px;
+                padding-left: 20px;
+            }
+
+            #notepad {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100%;
+                width: calc(100% - 800px);
+
+                border: none;
+                outline: none;
+                background: #440000;
+                padding: 5rem 5rem 2rem 2rem;
+                background: transparent;
+                z-index: 999;
+                opacity: 0.2;
+                color: rgb(227, 192, 162);
+                /* background: #ff553222; */
             }
 
             nav#bottomnav {
@@ -317,20 +399,21 @@
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                height: 200px;
+                height: 400px;
                 /* background: #FF0000; */
                 background: linear-gradient(180deg, rgba(21, 47, 22, 0) 0%, #152F16 100%);
                 background: linear-gradient(180deg, rgba(11, 22, 11, 0) 0%, #0B160B 100%);
-                background: linear-gradient(180deg, rgba(9, 14, 9, 0) 0%, #090E09 90%);
+                background: linear-gradient(180deg, rgba(9, 14, 9, 0) 0%, #000000BB 100%);
                 pointer-events: none;
                 z-index: -1;
             }
             nav a {
-                color: #86C488;
+                color: #ff5532;
                 margin-right: 20px;
                 text-decoration: none;
+                display: none;
             }
-            nav a:visited { color: #86C488 }
+            nav a:visited { color: #ff5532 }
             nav a:hover {
                 color: #FBFFD2;
                 text-decoration: underline;
@@ -343,18 +426,23 @@
             }
 
             header > a { opacity: 0.2 }
-            header > a:hover { opacity: 0.3; filter: drop-shadow(0px 0px 5px #86C48899) }
+            header > .nav-item:hover { filter: drop-shadow(0px 0px 2px #000000) drop-shadow(0px 0px 2px #000000) drop-shadow(0px 0px 1px #000000) drop-shadow(0px 0px 1px #FBFFD2) drop-shadow(0px 0px 1px #FBFFD2)   }
             header > a.selected {
                 opacity: 1;
             }
 
             .post {
-                background: #334B38;
-                padding: 10px 20px;
-                border: 2px solid #86C488;
-                border-radius: 5px;
+                /* background: #334B38; */
+                /* padding: 10px 20px; */
+                /* border: 2px solid #ff5532; */
+                /* border-radius: 5px; */
                 margin-bottom: 1rem;
-                font-family: monospace !important;
+                /* font-size: 0.8em; */
+                /* font-family: monospace !important; */
+            }
+
+            .post .date {
+                color: #ff5532;
             }
 
             .post:target {
@@ -372,33 +460,32 @@
             }
 
             {{ if (or (eq .Title "seeds") (eq .Title "community")) }}
-            main {
-                padding-bottom: 200px;
-            }
+                main {
+                    padding-bottom: 200px;
+                }
 
-            main h2 {
-                font-size: 15pt;
-            }
+                main h2 {
+                    font-size: 15pt;
+                }
             {{ end }}
 
             {{ if eq .Title "community" }}
-            main h2 {
-                font-size: 12pt;
-            }
+                main h2 {
+                    font-size: 12pt;
+                }
 
-            h2 a {
-                /* color: #86C488; */
-                opacity: 1;
-            }
+                h2 a {
+                    /* color: #ff5532; */
+                    opacity: 1;
+                }
 
-            h2 a:visited {
-                /* opacity: 1 !important; */
-                color: #3C5B3D;
-                color: #6D736D;
-                color: #6B735A;
-                /* opacity: 1; */
-            }
-
+                h2 a:visited {
+                    /* opacity: 1 !important; */
+                    color: #3C5B3D;
+                    color: #6D736D;
+                    color: #6B735A;
+                    /* opacity: 1; */
+                }
             {{ end }}
             
             .tip {
@@ -409,15 +496,17 @@
             .dot {
                 position: relative;
                 display: inline-block;
-                width: 10px;
-                height: 10px;
+                width: 4px;
+                height: 4px;
                 margin: 0;
-                background: #86C488;
+                background: #ff5532;
+                background: #FBFFD2;
                 border-radius: 50px;
+                margin: 0 auto 2px auto;
             }
             .dot.empty {
                 background: none;
-                border: 1px solid #86C488;
+                border: 1px solid #ff5532;
             }
 
             textarea {
@@ -438,6 +527,7 @@
 
             header {
                 position: relative;
+                
             }
             #topnav {
                 position: absolute;
@@ -493,7 +583,7 @@
 
             .separator {
                 text-align: center;
-                color: #86C488;
+                color: #ff5532;
             }
 
             code {
@@ -523,7 +613,33 @@
             }
 
             section[aria-label~="meta"] {
-                opacity: 0.5;
+                position: relative;
+                opacity: 1;
+            }
+            section[aria-label~="meta"] a {
+                text-decoration: none;
+            }
+            section[aria-label~="meta"]::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                height: 50%;
+                width: 500px;
+                border-bottom: 1px solid #ff5532;
+                transform: translateX(calc(-100% - 20px));
+            }
+            section[aria-label~="meta"]::after {
+                content: "";
+                position: absolute;
+                left: -20px;
+                top: 50%;
+                width: 10px;
+                height: 10px;
+                border-radius: 10px;
+                /* border-bottom: 1px solid #ff5532; */
+                transform: translate(-50%, -50%);
+                background: #ff5532;
             }
 
             summary {
@@ -565,8 +681,39 @@
                 width: 100%;
                 height: 100%;
                 border-radius: 50px;
-                background: #86C488;
-                opacity: 0.2;
+                background: #ff5532;
+                background: #FBFFD2;
+                opacity: 0.4;
+                z-index: -1;
+            }
+
+            .recency-tracker {
+                position: absolute;
+                top: 0; left: 0;
+                border-bottom: 80px solid #ff5532;
+                /* border-bottom: 35px solid #ffFF3255; */
+                color: #ff5532;
+                text-align: right;
+                transform-origin: 100% 100%;
+                transform: translate(-100%, -100%) rotate(-90deg);
+                font-size: 6pt;
+                font-size: 0;
+                filter: blur(50px);
+                /* z-index: -1; */
+                pointer-events: none;
+                mix-blend-mode: multiply;
+            }
+            .recency-tracker.today {
+                left: 120px;
+                border-bottom-width: 120px;
+                opacity: 0.7;
+                z-index: 999;
+            }
+            .recency-tracker.week {
+                left: 80px;
+                opacity: 0.6;
+                border-color: blue;
+                z-index: 1000;
             }
         </style>
 
@@ -589,8 +736,8 @@
     </head>
     <body>
         <header>
-            <a style="margin-bottom: 0; margin-right: 10px; height: 48px;"  href="/" aria-label="Home" {{ if eq .Title "seeds" }} class="selected" {{ end }}>
-                <svg aria-hidden="true" style="margin-bottom: 0;" width="48" height="48" fill="#86C488" stroke="none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <a id="logo" style="margin-bottom: 0; height: 48px;"  href="/" aria-label="Home" class="selected">
+                <svg aria-hidden="true" style="margin-bottom: 0;" width="48" height="48" fill="#FBFFD2" stroke="none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                   <!-- <g>
                     <path d="M185,65 A60,60 0 0,0 125,125 L185,125 Z M125,245 A60,60 0 0,0 185,185 L125,185 Z M95,125 A30,30 0 0,1 125,155 A30,30 0 0,1 95,185 A30,30 0 0,1 65,155 A30,30 0 0,1 95,125 Z M155,125 A30,30 0 0,1 185,155 A30,30 0 0,1 155,185 A30,30 0 0,1 125,155 A30,30 0 0,1 155,125 Z M215,125 A30,30 0 0,1 245,155 A30,30 0 0,1 215,185 A30,30 0 0,1 185,155 A30,30 0 0,1 215,125 "/>
                     <path d="M125,65 A60,60 0 0,1 185,125 L125,125 Z M185,245 A60,60 0 0,1 125,185 L185,185 Z M65,65 A60,60 0 0,1 125,125 L65,125 Z M65,245 A60,60 0 0,0 125,185 L65,185 Z M245,65 A60,60 0 0,0 185,125 L245,125 Z M245,245 A60,60 0 0,1 185,185 L245,185 Z"/>
@@ -602,11 +749,40 @@
                   </g>
                 </svg>
             </a>
-            <a style="margin-bottom: 0; height: 48px;" href="/community" aria-label="Community" {{ if eq .Title "community" }} class="selected" {{ end }}>
-                <svg aria-hidden="true" style="margin-bottom: 0" width="48" height="48" viewBox="0 0 200 200" fill="#86C488" xmlns="http://www.w3.org/2000/svg">
+
+            {{ if eq .Title "seeds" }}
+                {{ if .LoggedIn }}
+                    <a href="/seed/new" class="nav-item">
+                        <svg width="75" height="75" viewBox="0 0 75 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M55.625 21H20.375C17.1303 21 14.5 23.6303 14.5 26.875V49.2C14.5 52.4447 17.1303 55.075 20.375 55.075H55.625C58.8697 55.075 61.5 52.4447 61.5 49.2V26.875C61.5 23.6303 58.8697 21 55.625 21ZM19.8055 24.5945C18.7828 24.849 18.025 25.7735 18.025 26.875V49.2C18.025 50.4979 19.0771 51.55 20.375 51.55H55.625C55.7644 51.55 55.901 51.5379 56.0338 51.5146C55.9011 51.5378 55.7647 51.5499 55.6254 51.5499H20.3754C19.0775 51.5499 18.0254 50.4978 18.0254 49.1999V26.8749C18.0254 25.7736 18.783 24.8492 19.8055 24.5945ZM38.0002 30.0748C38.8286 30.0748 39.5002 30.7464 39.5002 31.5748V37.1248H45.6377C46.4661 37.1248 47.1377 37.7964 47.1377 38.6248C47.1377 39.4532 46.4661 40.1248 45.6377 40.1248H39.5002V45.6748C39.5002 46.5032 38.8286 47.1748 38.0002 47.1748C37.1718 47.1748 36.5002 46.5032 36.5002 45.6748V40.1248H30.3627C29.5343 40.1248 28.8627 39.4532 28.8627 38.6248C28.8627 37.7964 29.5343 37.1248 30.3627 37.1248H36.5002V31.5748C36.5002 30.7464 37.1718 30.0748 38.0002 30.0748Z" fill="black"/>
+                        </svg>   
+                    </a>
+
+                    <a href="/" class="nav-item">
+                        <svg width="75" height="75" viewBox="0 0 75 75" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M40 15.6699C38.453 14.7767 36.547 14.7767 35 15.6699L19.5 24.6188C17.953 25.512 17 27.1626 17 28.9489V46.8468C17 48.6331 17.953 50.2837 19.5 51.1769L35 60.1258C36.547 61.019 38.453 61.019 40 60.1258L55.5 51.1769C57.047 50.2838 58 48.6331 58 46.8468V28.9489C58 27.1626 57.047 25.512 55.5 24.6188L40 15.6699ZM40.4462 20.0129C40.4462 20.8844 39.2686 21.591 37.816 21.591C36.3635 21.591 35.1859 20.8844 35.1859 20.0129C35.1859 19.1413 36.3635 18.4348 37.816 18.4348C39.2686 18.4348 40.4462 19.1413 40.4462 20.0129ZM29.0838 26.8513C30.5364 26.8513 31.7139 26.1448 31.7139 25.2732C31.7139 24.4016 30.5364 23.6951 29.0838 23.6951C27.6312 23.6951 26.4536 24.4016 26.4536 25.2732C26.4536 26.1448 27.6312 26.8513 29.0838 26.8513ZM43.2154 53.5183C44.3379 53.8191 45.5526 52.9255 45.9286 51.5224C46.3046 50.1193 45.6994 48.738 44.5769 48.4372C43.4544 48.1365 42.2397 49.0301 41.8637 50.4332C41.4878 51.8363 42.093 53.2175 43.2154 53.5183ZM37.816 32.1116C39.2686 32.1116 40.4462 31.4051 40.4462 30.5335C40.4462 29.662 39.2686 28.9554 37.816 28.9554C36.3635 28.9554 35.1859 29.662 35.1859 30.5335C35.1859 31.4051 36.3635 32.1116 37.816 32.1116ZM40.4462 25.2732C40.4462 26.1448 39.2686 26.8513 37.816 26.8513C36.3635 26.8513 35.1859 26.1448 35.1859 25.2732C35.1859 24.4016 36.3635 23.6951 37.816 23.6951C39.2686 23.6951 40.4462 24.4016 40.4462 25.2732ZM46.9689 26.8513C48.4215 26.8513 49.5991 26.1448 49.5991 25.2732C49.5991 24.4016 48.4215 23.6951 46.9689 23.6951C45.5163 23.6951 44.3388 24.4016 44.3388 25.2732C44.3388 26.1448 45.5163 26.8513 46.9689 26.8513ZM50.1369 44.1579C49.7609 45.561 48.5462 46.4546 47.4237 46.1538C46.3012 45.8531 45.6961 44.4718 46.072 43.0687C46.448 41.6656 47.6627 40.772 48.7852 41.0728C49.9076 41.3735 50.5128 42.7548 50.1369 44.1579ZM27.7431 46.1538C26.6206 46.4546 25.4059 45.561 25.0299 44.1579C24.6539 42.7548 25.2591 41.3735 26.3816 41.0728C27.5041 40.772 28.7188 41.6656 29.0948 43.0687C29.4707 44.4718 28.8655 45.8531 27.7431 46.1538ZM54.3451 36.7934C53.9692 38.1965 52.7545 39.0901 51.632 38.7894C50.5095 38.4886 49.9043 37.1073 50.2803 35.7042C50.6562 34.3011 51.871 33.4075 52.9934 33.7083C54.1159 34.0091 54.7211 35.3903 54.3451 36.7934Z" fill="black"/>
+                        </svg>  
+                    </a>
+                {{ end }}
+            {{ end }}
+
+            
+            {{ if avail "Posts" .Data }}
+                {{ range $index, $post := .Data.Posts }}
+                    <div class="dot">
+                        {{ if gt (len $post.Comments) 0 }}
+                            <div class="outerdot" style="transform: scale({{ divide (float (add (len $post.Comments) 10)) 8.0 }})"></div>
+                        {{ end }}
+                    </div>
+                {{ end }}
+            {{ end }}
+
+            
+            <!-- <a style="margin-bottom: 0; height: 48px;" href="/community" aria-label="Community" {{ if eq .Title "community" }} class="selected" {{ end }}>
+                <svg aria-hidden="true" style="margin-bottom: 0" width="48" height="48" viewBox="0 0 200 200" fill="#ff5532" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M49.4339 42.1435C62.7005 29.3116 79.6316 19.1832 88.6399 16.6731C97.6481 14.163 99.9286 14.2488 109.789 17.466C122.131 21.4926 138.634 30.4234 148.546 38.4394C168.029 54.1944 181.233 79.2524 184.464 106.599C185.568 115.949 185.569 182.831 184.464 183.936C183.856 184.545 175.826 184.767 146.003 185.002L53.6233 184.41H15.2955L14.8789 148.463C14.5907 123.542 14.6635 110.702 15.1162 106.599C17.8434 81.8992 29.6937 61.237 49.4339 42.1435ZM99.4954 105.508C110.466 105.508 119.359 96.6149 119.359 85.6444C119.359 74.6739 110.466 65.7805 99.4954 65.7805C88.5249 65.7805 79.6315 74.6739 79.6315 85.6444C79.6315 96.6149 88.5249 105.508 99.4954 105.508ZM71.8977 152.454C82.8682 152.454 91.7616 143.561 91.7616 132.59C91.7616 121.62 82.8682 112.726 71.8977 112.726C60.9272 112.726 52.0338 121.62 52.0338 132.59C52.0338 143.561 60.9272 152.454 71.8977 152.454ZM147.966 132.59C147.966 143.561 139.073 152.454 128.102 152.454C117.132 152.454 108.238 143.561 108.238 132.59C108.238 121.62 117.132 112.726 128.102 112.726C139.073 112.726 147.966 121.62 147.966 132.59Z"/>
                 </svg>
-            </a>
+            </a> -->
             <!-- <nav id="topnav">
                 <ul type="menu">
                     <details>
@@ -655,6 +831,23 @@
             
             
         </header>
+
+        <textarea id="notepad"></textarea>
+
+        <script>
+            (function() {
+                let name = window.location.pathname.split('/').slice(0,3)
+                let data = localStorage.getItem(name) || ''
+
+                let notepad = document.querySelector('#notepad')
+                
+                notepad.value = data
+
+                notepad.addEventListener('input', function(e) {
+                    localStorage.setItem(name, notepad.value)
+                })
+            })();
+        </script>
 
         <!-- {{ if eq .Title "seeds" }} -->
             

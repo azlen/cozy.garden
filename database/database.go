@@ -53,8 +53,6 @@ func createTables(db *sql.DB) {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     passwordhash TEXT NOT NULL,
-	gardenids TEXT NOT NULL,
-	lastrefresh DATE,
 	invites INTEGER DEFAULT 0,
 	email TEXT
   );
@@ -182,9 +180,9 @@ func (d DB) CreateThread(title, content string, authorid, topicid int) (int, err
 	d.SetLike(authorid, threadid, true)
 
 	// this doesn't seem to work?
-	stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%d," || gardenids WHERE id = %d`, threadid, authorid)
-	_, err = d.Exec(stmt)
-	util.Check(err, "adding thread %d to garden of user %s", threadid, authorid)
+	// stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%d," || gardenids WHERE id = %d`, threadid, authorid)
+	// _, err = d.Exec(stmt)
+	// util.Check(err, "adding thread %d to garden of user %s", threadid, authorid)
 
 	// finally return the id of the created thread, so we can do a friendly redirect
 	return threadid, nil
@@ -304,12 +302,13 @@ type Thread struct {
 	PostCount int
 	UserPostCount int
 	Publish   time.Time
+	LastEdit  time.Time
 }
 
 // get a list of threads
 func (d DB) ListThreads(sortByPost bool) []Thread {
 	query := `
-  SELECT count(t.id), t.title, t.id, u.name FROM threads t
+  SELECT count(t.id), t.title, t.id, u.name, p.publishtime FROM threads t
   INNER JOIN users u on u.id = t.authorid
   INNER JOIN posts p ON t.id = p.threadid
   GROUP BY t.id
@@ -334,7 +333,7 @@ func (d DB) ListThreads(sortByPost bool) []Thread {
 	var data Thread
 	var threads []Thread
 	for rows.Next() {
-		if err := rows.Scan(&postCount, &data.Title, &data.ID, &data.Author); err != nil {
+		if err := rows.Scan(&postCount, &data.Title, &data.ID, &data.Author, &data.LastEdit); err != nil {
 			log.Fatalln(util.Eout(err, "list threads: read in data via scan"))
 		}
 		data.Slug = util.GetThreadSlug(data.ID, data.Title, postCount)
@@ -362,21 +361,29 @@ func (d DB) ListThreadsUser(userid int) []Thread {
 //   GROUP BY t.id
 // `, userid)
 
-  	query := fmt.Sprintf(`
-		WITH split(id, str, ndx) AS (
-			SELECT '', gardenids||',',0 FROM users WHERE id = %d
-			UNION ALL SELECT
-			substr(str, 0, instr(str, ',')),
-			substr(str, instr(str, ',')+1),
-			ndx+1
-			FROM split WHERE str!=''
-		) SELECT count(t.id), t.title, t.id, u.name FROM split
-		INNER JOIN threads t ON t.id = split.id
-		INNER JOIN users u ON u.id = t.authorid
-		INNER JOIN posts p ON t.id = p.threadid
-		WHERE split.id != ''
-		GROUP BY t.id
-		ORDER BY split.ndx
+  	// query := fmt.Sprintf(`
+	// 	WITH split(id, str, ndx) AS (
+	// 		SELECT '', gardenids||',',0 FROM users WHERE id = %d
+	// 		UNION ALL SELECT
+	// 		substr(str, 0, instr(str, ',')),
+	// 		substr(str, instr(str, ',')+1),
+	// 		ndx+1
+	// 		FROM split WHERE str!=''
+	// 	) SELECT count(t.id), t.title, t.id, u.name FROM split
+	// 	INNER JOIN threads t ON t.id = split.id
+	// 	INNER JOIN users u ON u.id = t.authorid
+	// 	INNER JOIN posts p ON t.id = p.threadid
+	// 	WHERE split.id != ''
+	// 	GROUP BY t.id
+	// 	ORDER BY split.ndx
+	// `, userid)
+
+	query := fmt.Sprintf(`
+		SELECT count(threads.id), threads.title, threads.id, u.name FROM threads
+		INNER JOIN users u ON u.id = threads.id
+		INNER JOIN posts p ON p.threadid = threads.id
+		GROUP BY threads.id
+		ORDER BY p.publishtime;
 	`, userid)
 
 	stmt, err := d.db.Prepare(query)
@@ -405,39 +412,39 @@ func (d DB) ListThreadsUser(userid int) []Thread {
 	
 // }
 
-func (d DB) RefreshThreads(userid int) {
+// func (d DB) RefreshThreads(userid int) {
 
-	threads := d.ListThreads(true)
-	// log.Println(threads)
+// 	threads := d.ListThreads(true)
+// 	// log.Println(threads)
 
-	// newids := []int{}
-	newids := d.GetLikes(userid)
+// 	// newids := []int{}
+// 	newids := d.GetLikes(userid)
 
-	for i := 0; i < 6; i++ {
-		if len(threads) == 0 {
-			continue
-		}
+// 	for i := 0; i < 6; i++ {
+// 		if len(threads) == 0 {
+// 			continue
+// 		}
 
-		index := rand.Intn(len(threads))
+// 		index := rand.Intn(len(threads))
 		
-		// add ID of new thread to the garden
-		newids = append(newids, threads[index].ID)
+// 		// add ID of new thread to the garden
+// 		newids = append(newids, threads[index].ID)
 
-		// remove element from array to prevent duplicates
-		threads = append(threads[:index], threads[index+1:]...)
-	}
+// 		// remove element from array to prevent duplicates
+// 		threads = append(threads[:index], threads[index+1:]...)
+// 	}
 
-	gardenids := util.ArrayToString(newids, ",")
-	lastrefresh := time.Now()
+// 	gardenids := util.ArrayToString(newids, ",")
+// 	lastrefresh := time.Now()
 
-	// stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%s",  WHERE id = %d`, util.ArrayToString(newids, ","), userid)
-	stmt := `UPDATE users SET gardenids = ?, lastrefresh = ? WHERE id = ?`
-	_, err := d.Exec(stmt, gardenids, lastrefresh, userid)
-	util.Check(err, "refresh threads for user %d", userid)
+// 	// stmt := fmt.Sprintf(`UPDATE users SET gardenids = "%s",  WHERE id = %d`, util.ArrayToString(newids, ","), userid)
+// 	stmt := `UPDATE users SET gardenids = ?, lastrefresh = ? WHERE id = ?`
+// 	_, err := d.Exec(stmt, gardenids, lastrefresh, userid)
+// 	util.Check(err, "refresh threads for user %d", userid)
 
 	
-	// stmt = fmt.Sprintf(`UPDATE `)
-}
+// 	// stmt = fmt.Sprintf(`UPDATE `)
+// }
 
 func (d DB) SetLike(userid int, threadid int, value bool) {
 	stmt := `SELECT 1 FROM likes WHERE userid = ? AND threadid = ?`
@@ -668,23 +675,23 @@ func (d DB) AddPost(content string, threadid, authorid int) (postID int) {
 	err := d.db.QueryRow(stmt, content, publish, threadid, authorid).Scan(&postID)
 	util.Check(err, "add post to thread %d (author %d)", threadid, authorid)
 
-	d.SetLike(authorid, threadid, false)
+	// d.SetLike(authorid, threadid, false)
 
 	// splice the id of thread (if it exists) out of comma-separated gardenids
-	stmt = fmt.Sprintf(`
-	UPDATE users SET gardenids = (
-		WITH split(id, str) AS (
-			SELECT '', gardenids||',' FROM users WHERE id = %d
-			UNION ALL SELECT
-			substr(str, 0, instr(str, ',')),
-			substr(str, instr(str, ',')+1)
-			FROM split WHERE str!=''
-		) SELECT GROUP_CONCAT(id, ",") FROM split
-		WHERE id != "%d" AND id != ""
-	) WHERE id = %d;
-    `, authorid, threadid, authorid)
-	_, err = d.Exec(stmt)
-	util.Check(err, "removing thread %d from gardenids of user %d", threadid, authorid)
+	// stmt = fmt.Sprintf(`
+	// UPDATE users SET gardenids = (
+	// 	WITH split(id, str) AS (
+	// 		SELECT '', gardenids||',' FROM users WHERE id = %d
+	// 		UNION ALL SELECT
+	// 		substr(str, 0, instr(str, ',')),
+	// 		substr(str, instr(str, ',')+1)
+	// 		FROM split WHERE str!=''
+	// 	) SELECT GROUP_CONCAT(id, ",") FROM split
+	// 	WHERE id != "%d" AND id != ""
+	// ) WHERE id = %d;
+    // `, authorid, threadid, authorid)
+	// _, err = d.Exec(stmt)
+	// util.Check(err, "removing thread %d from gardenids of user %d", threadid, authorid)
 
 	return postID
 }
@@ -711,15 +718,15 @@ func (d DB) AddComment(content string, threadid, authorid int, replyto int) (pos
 	return postID
 }
 
-func (d DB) GetLastRefresh(userid int) (time.Time, error) {
-	stmt := `SELECT lastrefresh FROM users where id = ?`
-	var lastrefresh time.Time
-	err := d.db.QueryRow(stmt, userid).Scan(&lastrefresh)
-	if err != nil {
-		return time.UnixMicro(0), util.Eout(err, "get last refresh")
-	}
-	return lastrefresh, nil
-}
+// func (d DB) GetLastRefresh(userid int) (time.Time, error) {
+// 	stmt := `SELECT lastrefresh FROM users where id = ?`
+// 	var lastrefresh time.Time
+// 	err := d.db.QueryRow(stmt, userid).Scan(&lastrefresh)
+// 	if err != nil {
+// 		return time.UnixMicro(0), util.Eout(err, "get last refresh")
+// 	}
+// 	return lastrefresh, nil
+// }
 
 func (d DB) CreateTopic(title, description string) {
 	stmt := `INSERT INTO topics (name, description) VALUES (?, ?)`
@@ -746,9 +753,9 @@ func (d DB) DeleteTopic(topicid int) {
 }
 
 func (d DB) CreateUser(name, hash, email, code string) (int, error) {
-	stmt := `INSERT INTO users (name, passwordhash, email, lastrefresh, gardenids) VALUES (?, ?, ?, ?, ?) RETURNING id`
+	stmt := `INSERT INTO users (name, passwordhash, email) VALUES (?, ?, ?) RETURNING id`
 	var userid int
-	err := d.db.QueryRow(stmt, name, hash, email, time.UnixMicro(0), "").Scan(&userid)
+	err := d.db.QueryRow(stmt, name, hash, email).Scan(&userid)
 	if err != nil {
 		return -1, util.Eout(err, "creating user %s", name)
 	}

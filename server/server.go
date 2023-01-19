@@ -13,7 +13,6 @@ import (
 	"time"
 	"os"
 	"math/rand"
-	"math"
 
 	"cerca/crypto"
 	"cerca/database"
@@ -22,6 +21,8 @@ import (
 	"cerca/util"
 
 	"github.com/carlmjohnson/requests"
+	
+	"reflect"
 )
 
 /* TODO (2022-01-03): include csrf token via gorilla, or w/e, when rendering */
@@ -43,7 +44,6 @@ type PasswordResetData struct {
 type IndexData struct {
 	Threads          []database.Thread
 	Likes            []int
-	SecondsRemaining int
 }
 
 type GenericMessageData struct {
@@ -90,7 +90,7 @@ type RequestHandler struct {
 }
 
 var developing bool
-var refreshinterval = 3 // hours
+// var refreshinterval = 3 // hours
 var enoian []string
 
 func dump(err error) {
@@ -147,6 +147,21 @@ func min(a, b int) int {
     return b
 }
 
+func interfaceToInt64(x interface{}) int64 {
+	switch x := x.(type) {   // This is a type switch.
+    case int64:
+        return x        // All done if we got an int64.
+    case int:
+        return int64(x) // This uses a conversion from int to int64
+    case string:
+		out, _ := strconv.ParseInt(x, 10, 64)
+        return out
+    default:
+		return 0
+        // return 0, fmt.Errorf("type %T not supported", t)
+    }
+}
+
 var (
 	templateFuncs = template.FuncMap{
 		"formatDateTime": func(t time.Time) string {
@@ -157,6 +172,12 @@ var (
 		},
 		"formatDate": func(t time.Time) string {
 			return t.Format("2006-01-02")
+		},
+		"formatDateTimeAsNumber": func(t time.Time) int64 {
+			return t.UnixMilli()
+		},
+		"timeNow": func() time.Time {
+			return time.Now()
 		},
 		"formatDateRelative": func(t time.Time) string {
 			diff := time.Since(t)
@@ -173,6 +194,16 @@ var (
 		"add": func(a int, b int) int {
 			return a + b
 		},
+		"minus": func(a interface{}, b interface{}) int64 {
+			a64 := interfaceToInt64(a)
+			b64 := interfaceToInt64(b)
+			return a64 - b64
+		},
+		"multiply": func(a interface{}, b interface{}) int64 {
+			a64 := interfaceToInt64(a)
+			b64 := interfaceToInt64(b)
+			return a64 * b64
+		},
 		"iterate": func(count *int) []int {
             var i int
             var Items []int
@@ -181,26 +212,6 @@ var (
             }
             return Items
         },
-		"refreshTimerTime": func(seconds int) string {
-			hours := int(math.Floor(float64(seconds) / 3600.0))
-			minutes := int(math.Floor(float64(seconds) / 60.0)) % 60
-
-			timeMessage := ""
-
-			// only show `X minutes` if there is less than an hour remaining
-			if hours > 0 {
-				timeMessage = timeMessage + fmt.Sprintf("%d hour%s", hours, util.IfThenElse(hours!=1, "s", ""))
-			}
-
-			if minutes > 0 {
-				if hours > 0 {
-					timeMessage = timeMessage + " and "
-				}
-				timeMessage = timeMessage + fmt.Sprintf("%d minute%s", minutes, util.IfThenElse(minutes!=1, "s", ""))
-			}
-
-			return timeMessage
-		},
 		"intToString": func(num int) string {
 			return strconv.Itoa(num)
 		},
@@ -209,6 +220,16 @@ var (
 		},
 		"divide": func(a, b float64) float64 {
 			return a / b
+		},
+		"avail": func(name string, data interface{}) bool {
+			v := reflect.ValueOf(data)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+			if v.Kind() != reflect.Struct {
+				return false
+			}
+			return v.FieldByName(name).IsValid()
 		},
 	}
 
@@ -374,38 +395,40 @@ func (h RequestHandler) IndexRoute(res http.ResponseWriter, req *http.Request) {
 		// mostRecentPost = sortby == "posts"
 	// }
 
-	if loggedIn {
-		lastrefresh, err := h.db.GetLastRefresh(userid)
-		if err != nil {
-			fmt.Println(err)
-		}
+	// if loggedIn {
+	
+	// lastrefresh, err := h.db.GetLastRefresh(userid)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-		now := time.Now()
-		elapsed := now.Sub(lastrefresh)
-		remainingtime := refreshinterval * 60 * 60 - int(elapsed.Seconds())
+	// now := time.Now()
+	// elapsed := now.Sub(lastrefresh)
+	// remainingtime := refreshinterval * 60 * 60 - int(elapsed.Seconds())
 
-		// refreshinterval := 3 // hours
-		if elapsed.Hours() > float64(refreshinterval) {
-			h.db.RefreshThreads(userid)
+	// refreshinterval := 3 // hours
+	// if elapsed.Hours() > float64(refreshinterval) {
+	// 	h.db.RefreshThreads(userid)
 
-			remainingtime = refreshinterval * 60 * 60  // hours to minutes to seconds
-		}
+	// 	remainingtime = refreshinterval * 60 * 60  // hours to minutes to seconds
+	// }
 
-		
-		// show index listing
-		// threads := h.db.ListThreads(mostRecentPost)
+	
+	// show index listing
+	// threads := h.db.ListThreads(mostRecentPost)
 
-		threads := h.db.ListThreadsUser(userid)
-		likes := h.db.GetLikes(userid)
+	threads := h.db.ListThreads(true)
+	likes := h.db.GetLikes(userid)
 
-		// fmt.Println(threads)
-		
-		view := TemplateData{Data: IndexData{threads, likes, remainingtime}, LoggedIn: loggedIn, Title: "seeds"}
-		h.renderView(res, "index", view)
-	} else {
-		view := TemplateData{LoggedIn: loggedIn, Title: "seeds"}
-		h.renderView(res, "landing", view)
-	}
+	// fmt.Println(threads)
+	
+	view := TemplateData{Data: IndexData{threads, likes}, LoggedIn: loggedIn, Title: "seeds"}
+	h.renderView(res, "index", view)
+
+	// } else {
+	// 	view := TemplateData{LoggedIn: loggedIn, Title: "seeds"}
+	// 	h.renderView(res, "landing", view)
+	// }
 }
 
 func (h RequestHandler) CommunityRoute(res http.ResponseWriter, req *http.Request) {
@@ -421,7 +444,7 @@ func (h RequestHandler) CommunityRoute(res http.ResponseWriter, req *http.Reques
 
 		// fmt.Println(threads)
 		
-		view := TemplateData{Data: IndexData{ threads, likes, 0 }, LoggedIn: loggedIn, Title: "community"}
+		view := TemplateData{Data: IndexData{ threads, likes }, LoggedIn: loggedIn, Title: "community"}
 		h.renderView(res, "community", view)
 	} else {
 		IndexRedirect(res, req)
@@ -472,13 +495,13 @@ func IndexRedirect(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, "/", http.StatusSeeOther)
 }
 
-func (h RequestHandler) RefreshRoute(res http.ResponseWriter, req *http.Request) {
-	loggedIn, userid := h.IsLoggedIn(req)
-	if loggedIn {
-		h.db.RefreshThreads(userid)
-	}
-	IndexRedirect(res, req)
-}
+// func (h RequestHandler) RefreshRoute(res http.ResponseWriter, req *http.Request) {
+// 	loggedIn, userid := h.IsLoggedIn(req)
+// 	if loggedIn {
+// 		h.db.RefreshThreads(userid)
+// 	}
+// 	IndexRedirect(res, req)
+// }
 
 func (h RequestHandler) LikePostRoute(res http.ResponseWriter, req *http.Request) {
 	// if req.Method == "GET" {
@@ -836,6 +859,7 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 
 		// var exists bool
 		
+
 		var invite database.Invite
 		if code != "" {
 			if exists, err = h.db.CheckInviteCodeExists(code); exists {
@@ -856,6 +880,7 @@ func (h RequestHandler) RegisterRoute(res http.ResponseWriter, req *http.Request
 			renderErr("Please provide an invite code to register")
 			return
 		}
+		
 		
 		// read verification code from form
 		// verificationLink := req.PostFormValue("verificationlink")
@@ -1073,7 +1098,7 @@ func Serve(sessionKey string, isdev bool) {
 	http.HandleFunc("/robots.txt", handler.RobotsRoute)
 	http.HandleFunc("/", handler.IndexRoute)
 
-	http.HandleFunc("/refresh", handler.RefreshRoute)
+	// http.HandleFunc("/refresh", handler.RefreshRoute)
 	http.HandleFunc("/seed/cultivate/", handler.LikePostRoute)
 
 	http.HandleFunc("/community", handler.CommunityRoute)

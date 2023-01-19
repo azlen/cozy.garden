@@ -1,15 +1,19 @@
 {{ template "head" . }}
-<!-- crop rotation? -->
-<!-- <span>uncultivated prompts will be replanted in 2 hours</span> -->
-<div class="replanting">
-	<span class="tip" title="If you want a particular question or challenge to stick around &#013;click on the marker to the left of the title to cultivate it">uncultivated</span> seeds will be replanted in <span id="timer">{{ refreshTimerTime .Data.SecondsRemaining }}</span>
-	<!--<a href="/refresh">refresh now</a>-->
-</div>
 
 <main>
 	{{ $likes := .Data.Likes}}
+	{{ $today := 0 }}
+	{{ $week := 0 }}
 	{{ range $index, $thread := .Data.Threads }}
 		{{ $cultivated := false }}
+
+		{{ if gt ($thread.LastEdit | formatDateTimeAsNumber) (minus (timeNow | formatDateTimeAsNumber) 86400000) }}
+			{{ $today = add $today 1 }}
+		{{ end }}
+
+		{{ if gt ($thread.LastEdit | formatDateTimeAsNumber) (minus (timeNow | formatDateTimeAsNumber) 604800000) }}
+			{{ $week = add $week 1 }}
+		{{ end }}
 
 		{{ range $index2, $likeid := $likes }}
 			{{ if eq $thread.ID $likeid }}
@@ -27,12 +31,12 @@
 			<a href="{{ $thread.Slug }}">{{ $thread.Title }}</a>
 		</h2>
 	{{ end }}
+
+	<div class="recency-tracker week" style="width: {{ multiply $week 45 }}px;">This Week</div>
+	<div class="recency-tracker today" style="width: {{ multiply $today 45 }}px;">Today</div>
 </main>
 
 <script>
-	let secondsRemainingOnLoad = {{ .Data.SecondsRemaining }};
-	let loadedTime = Date.now();
-
 	function toggleLike(event) {
 		let checkbox = this.previousElementSibling
 		// prevent from following link when javascript is enabled
@@ -52,23 +56,6 @@
 
 		return false
 	}
-
-	setInterval(function() {
-		let time = Date.now();
-		let elapsed = time - loadedTime;
-
-		let elapsedSeconds = Math.floor(elapsed / 1000); // milliseconds to seconds
-		let secondsRemaining = Math.max(secondsRemainingOnLoad - elapsedSeconds, 0);
-
-		let hours = Math.floor(secondsRemaining / 3600)
-		let minutes = Math.floor(secondsRemaining / 60) % 60
-
-		let timeMessage = `${hours>0? `${hours} hour${hours!=1?"s":""}` : ""}${hours>0&&minutes>0?" and ":""}${minutes>0 ? `${minutes} minute${minutes!=1?"s":""}` : ""}`
-
-		let timer = document.getElementById('timer')
-		timer.textContent = timeMessage
-
-	}, 1000 * 60)
 </script>
 
 <!-- {{ if .LoggedIn }}

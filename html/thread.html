@@ -1,13 +1,14 @@
 {{ template "head" . }}
 
-<div class="replanting" style="margin: 0">
-	Prompt:
-</div>
-
-{{ .Data.Fragment }}
-
 <main>
+    <!-- <div class="replanting" style="margin: 0">
+        Prompt:
+    </div> -->
+
+    {{ .Data.Fragment }}
+
     <h1>{{ .Data.Title }}</h1>
+
     {{ $userID := .LoggedInID }}
     {{ $threadURL := .Data.ThreadURL }}
 
@@ -23,21 +24,7 @@
         {{ $prompt.Content }}
     </article>
 
-    {{ range $index, $post := .Data.Posts }}
-        {{ if gt $index 0 }}
-            <div class="dot">
-                {{ if gt (len $post.Comments) 0 }}
-                    <div class="outerdot" style="transform: scale({{ divide (float (add (len $post.Comments) 10)) 8.0 }})"></div>
-                {{ end }}
-            </div>
-        {{ end }}
-    {{ end }}
-
-    {{ range $index, $post := iterate .Data.Likes }}
-        <div class="dot empty"></div>
-    {{ end }}
-
-    {{ if gt (len .Data.Posts) 1 }}
+    <!-- {{ if gt (len .Data.Posts) 1 }}
         {{ if $participated }}
             {{ if eq (add (len .Data.Posts) -1) 1 }}
             <div class="replanting">There has been 1 submission to this prompt:</div>
@@ -51,7 +38,7 @@
     <div class="replanting">
         Nobody has submitted yet! you could be the first:
     </div>
-    {{ end }}
+    {{ end }} -->
 
     {{ $open := .Data.Open }}
     
@@ -81,12 +68,12 @@
                             </form>
                         </span>
                     {{ end }}
-                    <span class="visually-hidden">Author:</span>
+                    <!-- <span class="visually-hidden">Author:</span>
                     <span><b>{{ $post.Author }}</b>
                         <span class="visually-hidden"> responded:</span>
-                    </span>
+                    </span> -->
                     <a href="#{{ $post.ID }}">
-                        <span style="margin-left: 0.5rem; font-style: italic;">
+                        <span class="date">
                             <time datetime="{{ $post.Publish | formatDate }}">{{ $post.Publish | formatDateRelative }}</time>
                         </span>
                     </a>
