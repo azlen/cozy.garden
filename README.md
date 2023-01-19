@@ -9,7 +9,6 @@ Install [golang](https://go.dev/).
 
 To launch a local instance of the forum, run those commands (linux):
 
-- `touch temp.txt`
 - `mkdir data`
 - `go run run.go --authkey 0 --dev`
 
