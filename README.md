@@ -1,7 +1,7 @@
 # Cozy Garden
 _a place to grow ideas_
 
-Cozy Garden is a space to share and participate in creative challenges, ask intriguing questions, and meet likeminded learners. The platform is powered by a modified version of [Cerca](https://github.com/cblgh/cerca), a forum software built for the [Merveilles community forums](https://forum.merveilles.town)
+Cozy Garden is a personal forum powered by a modified version of [Cerca](https://github.com/cblgh/cerca), a forum software built for the [Merveilles community forums](https://forum.merveilles.town)
 
 ## Local development
 
